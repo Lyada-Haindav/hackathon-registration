@@ -82,8 +82,20 @@ public class PaymentService {
             options.put("amount", fee.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValueExact());
             options.put("currency", "INR");
             options.put("receipt", generateRazorpayReceipt(team.getId()));
-            Order order = client.orders.create(options);
-            orderId = order.get("id");
+
+            try {
+                Order order = client.orders.create(options);
+                orderId = order.get("id");
+            } catch (RazorpayException firstEx) {
+                // Fallback with a guaranteed compact receipt if any upstream validation differs.
+                if (isReceiptLengthError(firstEx.getMessage())) {
+                    options.put("receipt", generateCompactReceipt());
+                    Order order = client.orders.create(options);
+                    orderId = order.get("id");
+                } else {
+                    throw firstEx;
+                }
+            }
         } catch (RazorpayException ex) {
             throw new BadRequestException("Unable to create Razorpay order: " + ex.getMessage());
         }
@@ -231,6 +243,18 @@ public class PaymentService {
         String suffix = Long.toString(System.currentTimeMillis(), 36);
         String receipt = "rcpt_" + safeTeamId + "_" + suffix;
         return receipt.length() <= 40 ? receipt : receipt.substring(0, 40);
+    }
+
+    private String generateCompactReceipt() {
+        return "r_" + Long.toString(System.currentTimeMillis(), 36);
+    }
+
+    private boolean isReceiptLengthError(String message) {
+        if (message == null) {
+            return false;
+        }
+        String normalized = message.toLowerCase();
+        return normalized.contains("receipt") && normalized.contains("length");
     }
 
     private boolean isInvalidConfig(String value) {
