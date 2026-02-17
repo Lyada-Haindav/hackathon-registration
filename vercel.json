@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/(.*)",
-      "destination": "https://hackathon-registration.onrender.com/$1"
+      "destination": "https://hackathon-registration-1rxc.onrender.com/$1"
     }
   ]
 }
