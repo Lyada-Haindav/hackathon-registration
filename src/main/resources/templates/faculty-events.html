@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Faculty Events</title>
+    <link rel="stylesheet" href="/css/styles.css?v=faculty_ui_v2">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=h3">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/h-logo-32.png?v=h3">
+    <link rel="icon" type="image/svg+xml" href="/img/h-logo.svg?v=h3">
+</head>
+<body class="dashboard-bg">
+<div class="shape shape-one"></div>
+<div class="shape shape-two"></div>
+<div class="container">
+    <header class="dashboard-header">
+        <div>
+            <p class="eyebrow">Faculty Console</p>
+            <h1 class="page-title">Event Management</h1>
+            <p class="page-subtitle">Create and control hackathon events from one focused page.</p>
+        </div>
+        <div class="header-actions faculty-nav">
+            <a class="ghost-link" href="/faculty">Overview</a>
+            <a class="ghost-link active-nav" href="/faculty/events">Events</a>
+            <a class="ghost-link" href="/faculty/forms">Forms</a>
+            <a class="ghost-link" href="/faculty/problems">Problems</a>
+            <a class="ghost-link" href="/faculty/evaluation">Evaluation</a>
+            <a class="ghost-link" href="/faculty/teams">Teams</a>
+            <a class="ghost-link" href="/faculty/deployment">Deployment</a>
+            <button class="danger-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <p id="facultyMessage" class="status-banner"></p>
+
+    <section class="simple-shell">
+        <div class="section-title-row">
+            <h2>Events</h2>
+            <button onclick="loadFacultyEvents()">Refresh Events</button>
+        </div>
+        <div id="facultyEventCards" class="event-cards"></div>
+    </section>
+
+    <section class="simple-shell top-gap">
+        <h2>Create Hackathon Event</h2>
+        <form id="eventForm" class="grid-form top-gap">
+            <input name="title" placeholder="Event Title" required>
+            <input name="description" placeholder="Short Description" required>
+            <label>Start Date<input type="date" name="startDate" required></label>
+            <label>End Date<input type="date" name="endDate" required></label>
+            <label>Registration Opens<input type="date" name="registrationOpenDate" required></label>
+            <label>Registration Closes<input type="date" name="registrationCloseDate" required></label>
+            <label>Total Fee (INR, for 4 members)<input type="number" step="0.01" name="registrationFee" required></label>
+            <label>Status
+                <select name="active">
+                    <option value="true">Active</option>
+                    <option value="false">Inactive</option>
+                </select>
+            </label>
+            <button type="submit">Create Event</button>
+        </form>
+    </section>
+</div>
+
+<div id="facultyPopup" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="facultyPopupTitle">
+    <div class="modal-card">
+        <h3 id="facultyPopupTitle" class="modal-title">Update</h3>
+        <p id="facultyPopupBody" class="modal-body"></p>
+        <div class="modal-actions">
+            <button type="button" class="next-btn" onclick="closeFacultyPopup()">OK</button>
+        </div>
+    </div>
+</div>
+
+<script src="/js/common.js"></script>
+<script src="/js/faculty.js?v=ready_v4"></script>
+</body>
+</html>

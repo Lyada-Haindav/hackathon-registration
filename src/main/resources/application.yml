@@ -1,0 +1,32 @@
+server:
+  port: 8080
+
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb+srv://nanihaindav99145_db_user:Haindav1@cluster0.tkl0k00.mongodb.net/hackathon_db?retryWrites=true&w=majority&appName=Cluster0}
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:replace-this-with-very-long-and-random-secret-key-for-production}
+    expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+  payment:
+    mock-enabled: ${PAYMENT_MOCK_ENABLED:false}
+    fee-split-members: ${PAYMENT_FEE_SPLIT_MEMBERS:4}
+  razorpay:
+    key-id: ${RAZORPAY_KEY_ID:rzp_test_replace_me}
+    key-secret: ${RAZORPAY_KEY_SECRET:replace_me}
+  admin:
+    email: ${ADMIN_EMAIL:faculty@hackathon.com}
+    password: ${ADMIN_PASSWORD:Admin@123}
+  faculty:
+    secret-code: ${FACULTY_SECRET_CODE:KLHAZ}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

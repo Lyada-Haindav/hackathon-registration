@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Problem Statements</title>
+    <link rel="stylesheet" href="/css/styles.css">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico?v=h3">
+    <link rel="icon" type="image/png" sizes="32x32" href="/img/h-logo-32.png?v=h3">
+    <link rel="icon" type="image/svg+xml" href="/img/h-logo.svg?v=h3">
+</head>
+<body class="dashboard-bg">
+<div class="shape shape-one"></div>
+<div class="shape shape-two"></div>
+<div class="container">
+    <header class="dashboard-header">
+        <div>
+            <p class="eyebrow">Hackathon Problems</p>
+            <h1 class="page-title">Released Problem Statements</h1>
+            <p class="page-subtitle">Select an event to view the statements released by faculty.</p>
+        </div>
+        <div class="header-actions">
+            <a class="ghost-link" href="/user">User Dashboard</a>
+            <button class="danger-btn" onclick="logout()">Logout</button>
+        </div>
+    </header>
+
+    <p id="problemPageMessage" class="status-banner"></p>
+
+    <section class="simple-shell">
+        <div class="section-title-row">
+            <h2>Choose Event</h2>
+            <button onclick="loadEvents()">Refresh Events</button>
+        </div>
+        <div id="eventList" class="event-cards"></div>
+    </section>
+
+    <section class="simple-shell top-gap">
+        <h2 id="selectedEventTitle">Problem Statements</h2>
+        <p id="selectionPolicyNote" class="muted">Problem statement can be selected only once. Choose carefully before submitting.</p>
+        <div id="selectedTeamBox" class="mini-card hidden"></div>
+        <div id="problemStatementsList" class="list-stack"></div>
+    </section>
+</div>
+<script src="/js/common.js"></script>
+<script src="/js/problem-statements.js"></script>
+</body>
+</html>
