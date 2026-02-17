@@ -81,7 +81,7 @@ public class PaymentService {
             JSONObject options = new JSONObject();
             options.put("amount", fee.multiply(BigDecimal.valueOf(100)).setScale(0, RoundingMode.HALF_UP).longValueExact());
             options.put("currency", "INR");
-            options.put("receipt", "team_" + team.getId() + "_" + System.currentTimeMillis());
+            options.put("receipt", generateRazorpayReceipt(team.getId()));
             Order order = client.orders.create(options);
             orderId = order.get("id");
         } catch (RazorpayException ex) {
@@ -220,6 +220,17 @@ public class PaymentService {
 
     private boolean isMockOrder(String orderId) {
         return orderId != null && orderId.startsWith("mock_order_");
+    }
+
+    private String generateRazorpayReceipt(String teamId) {
+        String safeTeamId = teamId == null ? "team" : teamId.replaceAll("[^A-Za-z0-9_-]", "");
+        if (safeTeamId.length() > 20) {
+            safeTeamId = safeTeamId.substring(safeTeamId.length() - 20);
+        }
+
+        String suffix = Long.toString(System.currentTimeMillis(), 36);
+        String receipt = "rcpt_" + safeTeamId + "_" + suffix;
+        return receipt.length() <= 40 ? receipt : receipt.substring(0, 40);
     }
 
     private boolean isInvalidConfig(String value) {
