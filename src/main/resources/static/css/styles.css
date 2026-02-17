@@ -1705,3 +1705,266 @@ body.dashboard-bg .review-grid section strong {
         transform: translate3d(16px, -14px, 0);
     }
 }
+
+/* Device friendliness hardening */
+html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+}
+
+body {
+    overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+    max-width: 100%;
+    height: auto;
+}
+
+.container {
+    width: min(100%, 1140px);
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+}
+
+.header-row,
+.section-title-row,
+.meta-row,
+.member-header,
+.payment-box,
+.row {
+    flex-wrap: wrap;
+}
+
+.header-row > *,
+.dashboard-header > *,
+.section-title-row > *,
+.meta-row > * {
+    min-width: 0;
+}
+
+.page-title,
+.page-subtitle,
+.event-card h3,
+.mini-card h4,
+.status-banner,
+.modal-body,
+.output,
+code {
+    overflow-wrap: anywhere;
+}
+
+.event-card p,
+.mini-card p,
+#selectedTeamBox,
+#deploymentSummary {
+    overflow-wrap: anywhere;
+}
+
+.faculty-nav {
+    justify-content: flex-start;
+}
+
+.faculty-nav .ghost-link {
+    white-space: normal;
+}
+
+.row > input,
+.row > select,
+.row > textarea {
+    flex: 1 1 260px;
+    min-width: 0;
+}
+
+.row > button,
+.row > .ghost-btn,
+.row > .ghost-link {
+    flex: 0 0 auto;
+}
+
+.payment-box label {
+    min-width: 220px;
+    flex: 1 1 260px;
+}
+
+.home-v2-nav a {
+    text-align: center;
+}
+
+@media (max-width: 1100px) {
+    .container {
+        padding-top: 22px;
+        padding-bottom: 36px;
+    }
+
+    .home-stage {
+        min-height: 56vh;
+    }
+
+    .home-rings {
+        width: min(82vw, 660px);
+    }
+}
+
+@media (max-width: 900px) {
+    .dashboard-grid {
+        gap: 14px;
+    }
+
+    .card-grid {
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    }
+
+    .event-cards {
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    }
+
+    .meta-row {
+        align-items: flex-start;
+    }
+
+    .meta-row strong,
+    .meta-row .price {
+        display: block;
+    }
+}
+
+@media (max-width: 760px) {
+    .container {
+        padding: 14px 12px 26px;
+    }
+
+    .dashboard-header,
+    .header-row,
+    .section-title-row {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .header-actions,
+    .faculty-nav,
+    .home-v2-nav {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .header-actions > *,
+    .faculty-nav > *,
+    .home-v2-nav > a {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 0;
+        text-align: center;
+    }
+
+    .wizard-head {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+    }
+
+    .wizard-actions {
+        justify-content: stretch;
+    }
+
+    .wizard-actions > * {
+        flex: 1 1 calc(50% - 8px);
+        min-width: 0;
+    }
+
+    .home-rings {
+        display: none;
+    }
+
+    .home-stage {
+        min-height: 50vh;
+        padding-block: 8px;
+    }
+
+    .home-title-main {
+        font-size: clamp(2.2rem, 12vw, 4rem);
+    }
+}
+
+@media (max-width: 560px) {
+    .container {
+        padding-left: max(10px, env(safe-area-inset-left));
+        padding-right: max(10px, env(safe-area-inset-right));
+    }
+
+    .event-cards,
+    .card-grid,
+    .grid-form,
+    .dynamic-grid,
+    .member-grid,
+    .review-grid,
+    .podium-grid,
+    .home-quick-links {
+        grid-template-columns: 1fr;
+    }
+
+    .row,
+    .payment-box,
+    .wizard-actions,
+    .header-actions,
+    .faculty-nav,
+    .home-v2-nav {
+        flex-direction: column;
+    }
+
+    .row > *,
+    .payment-box > *,
+    .wizard-actions > *,
+    .header-actions > *,
+    .faculty-nav > *,
+    .home-v2-nav > a {
+        width: 100%;
+        flex: 1 1 100%;
+    }
+
+    .wizard-head {
+        grid-template-columns: 1fr;
+    }
+
+    .score-row {
+        grid-template-columns: 1fr;
+    }
+
+    .shape {
+        display: none;
+    }
+}
+
+@media (max-width: 420px) {
+    .page-title {
+        font-size: clamp(1.35rem, 9vw, 1.95rem);
+    }
+
+    .page-subtitle {
+        font-size: 0.92rem;
+    }
+
+    .home-logo {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .home-logo-text {
+        font-size: 0.9rem;
+    }
+
+    .home-title-main {
+        font-size: clamp(1.9rem, 13vw, 2.8rem);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
