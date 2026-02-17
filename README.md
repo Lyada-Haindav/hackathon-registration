@@ -200,6 +200,31 @@ src/main/resources
 - Keep `PAYMENT_MOCK_ENABLED=false` in production.
 - Configure real `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` before enabling live checkout.
 
+## Deploy on Render
+1. Push this repo to GitHub (already done).
+2. In Render, click **New +** -> **Blueprint** and select this repository.
+3. Render will auto-detect `render.yaml` and create the `hackathon-registration` web service.
+4. Set required secrets in Render:
+   - `MONGODB_URI`
+   - `JWT_SECRET`
+   - `ADMIN_PASSWORD`
+   - `RAZORPAY_KEY_ID`
+   - `RAZORPAY_KEY_SECRET`
+5. Deploy and open your Render URL:
+   - `https://<your-service-name>.onrender.com`
+6. Verify readiness from faculty portal:
+   - `/faculty/deployment`
+
+## Deploy on Vercel (as public entry/proxy)
+Vercel cannot run this Spring Boot server directly as a long-running process.  
+Use Render for backend runtime and Vercel as the public edge entry.
+
+1. Open `vercel.json` and set destination to your actual Render URL if it differs:
+   - `https://hackathon-registration.onrender.com`
+2. Import this repository into Vercel and deploy.
+3. Vercel will forward all routes (`/`, `/api/*`, dashboards) to your Render app.
+4. Attach your custom domain in Vercel if needed.
+
 ## Example Requests / Responses
 
 ### Register User

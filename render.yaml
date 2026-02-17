@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: hackathon-registration
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    healthCheckPath: /
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRATION_MS
+        value: 86400000
+      - key: FACULTY_SECRET_CODE
+        value: KLHAZ
+      - key: ADMIN_EMAIL
+        value: faculty@hackathon.com
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: PAYMENT_MOCK_ENABLED
+        value: "false"
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: PAYMENT_FEE_SPLIT_MEMBERS
+        value: "4"

@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "https://hackathon-registration.onrender.com/$1"
+    }
+  ]
+}
