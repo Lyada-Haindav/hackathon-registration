@@ -304,7 +304,6 @@ function renderFacultyEvents(events) {
             </div>
             <div class="row">
                 <button type="button" class="ghost-btn small use-event-btn">Use This Event</button>
-                <button type="button" class="ghost-btn small open-registration-btn">Open Registration Now</button>
                 <button type="button" class="ghost-btn small leaderboard-visibility-btn">
                     ${event.leaderboardVisible ? "Hide Leaderboard" : "Publish Leaderboard"}
                 </button>
@@ -316,7 +315,6 @@ function renderFacultyEvents(events) {
         `;
 
         card.querySelector(".use-event-btn")?.addEventListener("click", () => syncEventInputs(event.id));
-        card.querySelector(".open-registration-btn")?.addEventListener("click", () => openRegistrationNow(event.id));
         card.querySelector(".leaderboard-visibility-btn")?.addEventListener("click", () =>
             setLeaderboardVisibility(event.id, !event.leaderboardVisible)
         );
@@ -365,17 +363,6 @@ async function resumeEvent(eventId) {
         state.events = state.events.map((event) => (event.id === eventId ? updated : event));
         renderFacultyEvents(state.events);
         setFacultyMessage("Event resumed and is now active.");
-    } catch (error) {
-        setFacultyMessage(error.message, true);
-    }
-}
-
-async function openRegistrationNow(eventId) {
-    try {
-        const updated = await apiFetch(`/api/faculty/events/${eventId}/open-registration`, { method: "PUT" });
-        state.events = state.events.map((event) => (event.id === eventId ? updated : event));
-        renderFacultyEvents(state.events);
-        setFacultyMessage("Registration opened from today for this event.");
     } catch (error) {
         setFacultyMessage(error.message, true);
     }
