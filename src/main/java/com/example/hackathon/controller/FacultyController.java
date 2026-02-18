@@ -78,6 +78,11 @@ public class FacultyController {
         return ResponseEntity.ok(eventService.openRegistrationNow(eventId));
     }
 
+    @PutMapping("/events/{eventId}/close-registration")
+    public ResponseEntity<EventResponse> closeRegistrationNow(@PathVariable String eventId) {
+        return ResponseEntity.ok(eventService.closeRegistrationNow(eventId));
+    }
+
     @DeleteMapping("/events/{eventId}")
     public ResponseEntity<MessageResponse> deleteEvent(@PathVariable String eventId) {
         eventService.deleteEvent(eventId);

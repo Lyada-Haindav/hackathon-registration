@@ -15,6 +15,7 @@ public record EventResponse(
         BigDecimal feePerMember,
         int feeSplitMembers,
         boolean active,
+        boolean registrationOpen,
         boolean leaderboardVisible,
         boolean onHold
 ) {

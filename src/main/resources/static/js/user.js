@@ -198,6 +198,7 @@ function renderEvents(events) {
         card.className = "event-card";
         const fee = Number(event.registrationFee || 0);
         const perMemberFee = getPerMemberFee(event);
+        const registrationOpen = Boolean(event.registrationOpen);
         card.innerHTML = `
             <h3>${event.title}</h3>
             <p>${event.description}</p>
@@ -205,13 +206,14 @@ function renderEvents(events) {
                 <span>${event.startDate} to ${event.endDate}</span>
                 <span class="price">INR ${perMemberFee.toFixed(2)}/member</span>
             </div>
+            <p class="muted">Registration: <strong>${registrationOpen ? "Open" : "Closed"}</strong></p>
             <p class="muted">Configured total fee: INR ${fee.toFixed(2)}</p>
-            <button type="button" data-event-id="${event.id}">Select Event</button>
+            <button type="button" data-event-id="${event.id}">${registrationOpen ? "Select Event" : "Registration Closed"}</button>
         `;
 
         const selectButton = card.querySelector("button");
         selectButton.addEventListener("click", () => selectEvent(event.id));
-        if (state.registrationLocked) {
+        if (state.registrationLocked || !registrationOpen) {
             selectButton.disabled = true;
         }
 
@@ -239,6 +241,7 @@ function renderSelectedEvent(event) {
     const fee = Number(event.registrationFee || 0);
     const perMemberFee = getPerMemberFee(event);
     const splitMembers = getSplitMembers(event);
+    const registrationStatus = event.registrationOpen ? "Open" : "Closed";
     selectedCard.classList.remove("hidden");
     selectedCard.innerHTML = `
         <h3>Selected: ${event.title}</h3>
@@ -247,6 +250,7 @@ function renderSelectedEvent(event) {
             <span>${event.startDate} to ${event.endDate}</span>
             <strong>Fee: INR ${perMemberFee.toFixed(2)} per member</strong>
         </div>
+        <p class="muted">Registration Status: ${registrationStatus}</p>
         <p class="muted">Configured as INR ${fee.toFixed(2)} for ${splitMembers} members.</p>
     `;
 }

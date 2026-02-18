@@ -98,6 +98,10 @@ function paymentBadge(status) {
     return `<span class="status-pill ${badgeClass}">${status}</span>`;
 }
 
+function registrationBadge(isOpen) {
+    return `<span class="status-pill ${isOpen ? "active" : "inactive"}">${isOpen ? "REGISTRATION OPEN" : "REGISTRATION CLOSED"}</span>`;
+}
+
 function teamLeaderLabel(team) {
     const members = Array.isArray(team && team.members) ? team.members : [];
     const leader = members.find((member) => Boolean(member.leader));
@@ -296,6 +300,7 @@ function renderFacultyEvents(events) {
             <p class="muted">ID: ${event.id}</p>
             <p class="muted">Registration: ${event.registrationOpenDate} to ${event.registrationCloseDate}</p>
             <div class="row">
+                ${registrationBadge(Boolean(event.registrationOpen))}
                 ${leaderboardBadge(event.leaderboardVisible)}
             </div>
             <div class="meta-row">
@@ -304,6 +309,9 @@ function renderFacultyEvents(events) {
             </div>
             <div class="row">
                 <button type="button" class="ghost-btn small use-event-btn">Use This Event</button>
+                <button type="button" class="ghost-btn small registration-toggle-btn">
+                    ${event.registrationOpen ? "Close Registration" : "Open Registration"}
+                </button>
                 <button type="button" class="ghost-btn small leaderboard-visibility-btn">
                     ${event.leaderboardVisible ? "Hide Leaderboard" : "Publish Leaderboard"}
                 </button>
@@ -315,6 +323,9 @@ function renderFacultyEvents(events) {
         `;
 
         card.querySelector(".use-event-btn")?.addEventListener("click", () => syncEventInputs(event.id));
+        card.querySelector(".registration-toggle-btn")?.addEventListener("click", () =>
+            setRegistrationOpen(event.id, !event.registrationOpen)
+        );
         card.querySelector(".leaderboard-visibility-btn")?.addEventListener("click", () =>
             setLeaderboardVisibility(event.id, !event.leaderboardVisible)
         );
@@ -363,6 +374,18 @@ async function resumeEvent(eventId) {
         state.events = state.events.map((event) => (event.id === eventId ? updated : event));
         renderFacultyEvents(state.events);
         setFacultyMessage("Event resumed and is now active.");
+    } catch (error) {
+        setFacultyMessage(error.message, true);
+    }
+}
+
+async function setRegistrationOpen(eventId, open) {
+    const action = open ? "open-registration" : "close-registration";
+    try {
+        const updated = await apiFetch(`/api/faculty/events/${eventId}/${action}`, { method: "PUT" });
+        state.events = state.events.map((event) => (event.id === eventId ? updated : event));
+        renderFacultyEvents(state.events);
+        setFacultyMessage(open ? "Registration opened for this event." : "Registration closed for this event.");
     } catch (error) {
         setFacultyMessage(error.message, true);
     }

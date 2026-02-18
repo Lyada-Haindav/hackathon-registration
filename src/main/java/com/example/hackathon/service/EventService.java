@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -70,6 +69,7 @@ public class EventService {
         event.setEndDate(request.endDate());
         event.setRegistrationOpenDate(request.registrationOpenDate());
         event.setRegistrationCloseDate(request.registrationCloseDate());
+        event.setRegistrationOpen(false);
         event.setRegistrationFee(request.registrationFee());
         event.setActive(request.active());
         event.setOnHold(false);
@@ -103,10 +103,7 @@ public class EventService {
     }
 
     public List<EventResponse> getActiveEvents() {
-        LocalDate today = LocalDate.now();
         return eventRepository.findByActiveTrue().stream()
-                .filter(event -> !event.isOnHold())
-                .filter(event -> isRegistrationWindowOpen(event, today))
                 .map(this::toResponse)
                 .toList();
     }
@@ -141,16 +138,15 @@ public class EventService {
 
     public EventResponse openRegistrationNow(String eventId) {
         HackathonEvent event = getEventEntity(eventId);
-        LocalDate today = LocalDate.now();
-
-        event.setRegistrationOpenDate(today);
-        if (event.getRegistrationCloseDate() == null || event.getRegistrationCloseDate().isBefore(today)) {
-            LocalDate endDate = event.getEndDate();
-            event.setRegistrationCloseDate(endDate != null && !endDate.isBefore(today) ? endDate : today.plusDays(30));
-        }
-
+        event.setRegistrationOpen(true);
         event.setOnHold(false);
         event.setActive(true);
+        return toResponse(eventRepository.save(event));
+    }
+
+    public EventResponse closeRegistrationNow(String eventId) {
+        HackathonEvent event = getEventEntity(eventId);
+        event.setRegistrationOpen(false);
         return toResponse(eventRepository.save(event));
     }
 
@@ -181,25 +177,9 @@ public class EventService {
             throw new BadRequestException("Registrations are currently paused for this event");
         }
 
-        LocalDate today = LocalDate.now();
-        if (!isRegistrationWindowOpen(event, today)) {
-            String openDate = event.getRegistrationOpenDate() == null ? "not set" : event.getRegistrationOpenDate().toString();
-            String closeDate = event.getRegistrationCloseDate() == null ? "not set" : event.getRegistrationCloseDate().toString();
-            throw new BadRequestException("Registration window is closed for this event (open: " + openDate + ", close: " + closeDate + ")");
+        if (!event.isRegistrationOpen()) {
+            throw new BadRequestException("Registration is currently closed for this event. Wait for faculty to open registrations.");
         }
-    }
-
-    private boolean isRegistrationWindowOpen(HackathonEvent event, LocalDate today) {
-        LocalDate openDate = event.getRegistrationOpenDate();
-        LocalDate closeDate = event.getRegistrationCloseDate();
-
-        if (openDate != null && today.isBefore(openDate)) {
-            return false;
-        }
-        if (closeDate != null && today.isAfter(closeDate)) {
-            return false;
-        }
-        return true;
     }
 
     private EventResponse toResponse(HackathonEvent event) {
@@ -219,6 +199,7 @@ public class EventService {
                 feePerMember,
                 splitMembers,
                 event.isActive(),
+                event.isRegistrationOpen(),
                 event.isLeaderboardVisible(),
                 event.isOnHold()
         );

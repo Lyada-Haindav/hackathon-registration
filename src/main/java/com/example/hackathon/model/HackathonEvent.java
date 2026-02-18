@@ -36,6 +36,8 @@ public class HackathonEvent {
     @Indexed
     private boolean active = true;
 
+    private boolean registrationOpen = false;
+
     private boolean onHold = false;
 
     private boolean leaderboardVisible = false;
@@ -130,6 +132,14 @@ public class HackathonEvent {
 
     public void setOnHold(boolean onHold) {
         this.onHold = onHold;
+    }
+
+    public boolean isRegistrationOpen() {
+        return registrationOpen;
+    }
+
+    public void setRegistrationOpen(boolean registrationOpen) {
+        this.registrationOpen = registrationOpen;
     }
 
     public String getCreatedBy() {
