@@ -5,7 +5,9 @@ import com.example.hackathon.model.RegistrationForm;
 import com.example.hackathon.service.*;
 import com.example.hackathon.util.SecurityUtil;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +24,7 @@ public class FacultyController {
     private final CriterionService criterionService;
     private final EvaluationService evaluationService;
     private final DeploymentReadinessService deploymentReadinessService;
+    private final ExportService exportService;
 
     public FacultyController(EventService eventService,
                              FormService formService,
@@ -29,7 +32,8 @@ public class FacultyController {
                              ProblemStatementService problemStatementService,
                              CriterionService criterionService,
                              EvaluationService evaluationService,
-                             DeploymentReadinessService deploymentReadinessService) {
+                             DeploymentReadinessService deploymentReadinessService,
+                             ExportService exportService) {
         this.eventService = eventService;
         this.formService = formService;
         this.teamService = teamService;
@@ -37,6 +41,7 @@ public class FacultyController {
         this.criterionService = criterionService;
         this.evaluationService = evaluationService;
         this.deploymentReadinessService = deploymentReadinessService;
+        this.exportService = exportService;
     }
 
     @PostMapping("/events")
@@ -151,5 +156,16 @@ public class FacultyController {
     @GetMapping("/deployment/readiness")
     public ResponseEntity<DeploymentReadinessResponse> getDeploymentReadiness() {
         return ResponseEntity.ok(deploymentReadinessService.checkReadiness());
+    }
+
+    @GetMapping("/exports/{eventId}/{dataset}")
+    public ResponseEntity<byte[]> exportEventData(@PathVariable String eventId,
+                                                  @PathVariable String dataset,
+                                                  @RequestParam(defaultValue = "csv") String format) {
+        ExportService.ExportFile file = exportService.exportEventData(eventId, dataset, format);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(file.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + file.fileName() + "\"")
+                .body(file.content());
     }
 }

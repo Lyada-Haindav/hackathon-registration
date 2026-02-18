@@ -77,6 +77,98 @@ function getPreferredEventId(fallbackSelector = ".event-id-input") {
     return input ? String(input.value || "").trim() : "";
 }
 
+function resolveExportFilename(contentDisposition, fallbackFilename) {
+    if (!contentDisposition) {
+        return fallbackFilename;
+    }
+
+    const utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+    if (utf8Match && utf8Match[1]) {
+        try {
+            return decodeURIComponent(utf8Match[1]);
+        } catch (error) {
+            return utf8Match[1];
+        }
+    }
+
+    const plainMatch = contentDisposition.match(/filename=\"?([^\";]+)\"?/i);
+    if (plainMatch && plainMatch[1]) {
+        return plainMatch[1];
+    }
+
+    return fallbackFilename;
+}
+
+async function downloadExportReport(dataset, format = "csv", fallbackSelector = ".event-id-input") {
+    const explicitInput = document.querySelector(fallbackSelector);
+    const explicitEventId = explicitInput ? String(explicitInput.value || "").trim() : "";
+    const eventId = explicitEventId || state.selectedEventId;
+    if (!eventId) {
+        setFacultyMessage("Choose an event first to export reports.", true);
+        return;
+    }
+
+    const token = getToken();
+    if (!token) {
+        setFacultyMessage("Session expired. Please login again.", true);
+        return;
+    }
+
+    const normalizedDataset = String(dataset || "").trim().toLowerCase();
+    const normalizedFormat = String(format || "csv").trim().toLowerCase();
+    const endpoint = `/api/faculty/exports/${encodeURIComponent(eventId)}/${encodeURIComponent(normalizedDataset)}?format=${encodeURIComponent(normalizedFormat)}`;
+
+    try {
+        const response = await fetch(endpoint, {
+            method: "GET",
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const contentType = response.headers.get("content-type") || "";
+            let message = "Failed to download export file.";
+
+            if (contentType.includes("application/json")) {
+                const payload = await response.json();
+                message = payload.message || message;
+            } else {
+                const text = await response.text();
+                if (text) {
+                    message = text;
+                }
+            }
+
+            throw new Error(message);
+        }
+
+        const fallbackName = `${normalizedDataset}.${normalizedFormat === "xlsx" ? "xlsx" : "csv"}`;
+        const filename = resolveExportFilename(response.headers.get("content-disposition"), fallbackName);
+        const blob = await response.blob();
+        const downloadUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+
+        const labelMap = {
+            teams: "Teams",
+            payments: "Payments",
+            leaderboard: "Leaderboard",
+            evaluations: "Evaluations"
+        };
+        const datasetLabel = labelMap[normalizedDataset] || normalizedDataset;
+        setFacultyMessage(`${datasetLabel} ${normalizedFormat.toUpperCase()} export downloaded.`);
+    } catch (error) {
+        setFacultyMessage(error.message, true);
+    }
+}
+
 function activeBadge(active) {
     return `<span class="status-pill ${active ? "active" : "inactive"}">${active ? "ACTIVE" : "INACTIVE"}</span>`;
 }
@@ -1155,5 +1247,6 @@ window.loadTeamsByEvent = loadTeamsByEvent;
 window.loadProblemSelectionCounts = loadProblemSelectionCounts;
 window.loadFacultyEvents = loadFacultyEvents;
 window.loadDeploymentReadiness = loadDeploymentReadiness;
+window.downloadExportReport = downloadExportReport;
 window.closeFacultyPopup = closeFacultyPopup;
 window.logout = logout;

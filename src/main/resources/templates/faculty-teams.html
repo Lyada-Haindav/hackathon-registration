@@ -51,6 +51,19 @@
         <label>Event ID
             <input id="teamsEventId" class="event-id-input" placeholder="Event ID">
         </label>
+        <div class="section-title-row top-gap">
+            <h3>Export Reports</h3>
+        </div>
+        <div class="row">
+            <button class="ghost-btn" type="button" onclick="downloadExportReport('teams','csv','#teamsEventId')">Teams CSV</button>
+            <button class="ghost-btn" type="button" onclick="downloadExportReport('teams','xlsx','#teamsEventId')">Teams Excel</button>
+            <button class="ghost-btn" type="button" onclick="downloadExportReport('payments','csv','#teamsEventId')">Payments CSV</button>
+            <button class="ghost-btn" type="button" onclick="downloadExportReport('payments','xlsx','#teamsEventId')">Payments Excel</button>
+            <button class="ghost-btn" type="button" onclick="downloadExportReport('leaderboard','csv','#teamsEventId')">Leaderboard CSV</button>
+            <button class="ghost-btn" type="button" onclick="downloadExportReport('leaderboard','xlsx','#teamsEventId')">Leaderboard Excel</button>
+            <button class="ghost-btn" type="button" onclick="downloadExportReport('evaluations','csv','#teamsEventId')">Evaluations CSV</button>
+            <button class="ghost-btn" type="button" onclick="downloadExportReport('evaluations','xlsx','#teamsEventId')">Evaluations Excel</button>
+        </div>
         <label>Search Team
             <input id="teamsSearchInput" type="text" placeholder="Search by team name or Team ID">
         </label>
@@ -76,6 +89,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/faculty.js?v=ready_v6"></script>
+<script src="/js/faculty.js?v=ready_v7"></script>
 </body>
 </html>

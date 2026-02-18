@@ -185,6 +185,8 @@ src/main/resources
 - `POST /api/faculty/evaluations`
 - `GET /api/faculty/evaluations/{eventId}/{teamId}`
 - `GET /api/faculty/evaluations/{eventId}`
+- `GET /api/faculty/exports/{eventId}/{dataset}?format=csv|xlsx`
+  - `dataset`: `teams` | `payments` | `leaderboard` | `evaluations`
 
 ### Leaderboard APIs
 - `GET /api/leaderboard/{eventId}`
