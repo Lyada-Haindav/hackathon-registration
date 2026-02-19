@@ -318,6 +318,26 @@ label {
     text-align: center;
 }
 
+.auth-inline-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.inline-forgot-link {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #ffd9b3;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+.inline-forgot-link:hover {
+    color: #ffffff;
+}
+
 .field-builder-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1131,6 +1151,11 @@ body.auth-page .organizer-access-grid .card:hover {
 
     .auth-helper-links {
         flex-direction: column;
+    }
+
+    .auth-inline-actions {
+        flex-direction: column;
+        align-items: flex-start;
     }
 }
 
