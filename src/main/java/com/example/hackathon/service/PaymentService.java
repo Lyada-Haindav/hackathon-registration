@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Instant;
-import java.util.UUID;
 
 @Service
 public class PaymentService {
@@ -76,13 +75,12 @@ public class PaymentService {
 
         BigDecimal fee = calculatePayableFee(event, team.getTeamSize());
         if (fee.compareTo(BigDecimal.ZERO) <= 0) {
-            Payment saved = markFreeRegistration(team, event);
-            sendPaymentConfirmationSafely(userEmail, team, event, saved);
+            markFreeRegistration(team, event);
             return new PaymentOrderResponse(team.getId(), "FREE_REGISTRATION", razorpayKeyId, BigDecimal.ZERO, "INR");
         }
 
         if (paymentMockEnabled) {
-            return createMockOrder(team, event, fee);
+            throw new BadRequestException("Mock payments are disabled. Please use real Razorpay payment flow.");
         }
 
         validateRazorpayConfig();
@@ -144,24 +142,6 @@ public class PaymentService {
         Payment payment = paymentRepository.findByRazorpayOrderId(request.razorpayOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Payment record not found for order"));
 
-        if (paymentMockEnabled && isMockOrder(request.razorpayOrderId())) {
-            payment.setRazorpayPaymentId(request.razorpayPaymentId());
-            payment.setRazorpaySignature(request.razorpaySignature());
-            payment.setStatus(PaymentRecordStatus.CAPTURED);
-            payment.setVerifiedAt(Instant.now());
-            paymentRepository.save(payment);
-
-            team.setRazorpayPaymentId(request.razorpayPaymentId());
-            team.setPaymentStatus(PaymentStatus.SUCCESS);
-            teamRepository.save(team);
-
-            boolean emailSent = sendPaymentConfirmationSafely(userEmail, team, event, payment);
-            String message = emailSent
-                    ? "Mock payment verified successfully. Confirmation email sent."
-                    : "Mock payment verified successfully. Confirmation email could not be sent.";
-            return new PaymentVerificationResponse(team.getId(), team.getPaymentStatus(), message);
-        }
-
         String payload = request.razorpayOrderId() + "|" + request.razorpayPaymentId();
         String calculatedSignature = SignatureUtil.hmacSha256(razorpayKeySecret, payload);
 
@@ -220,26 +200,6 @@ public class PaymentService {
         }
     }
 
-    private PaymentOrderResponse createMockOrder(Team team, HackathonEvent event, BigDecimal fee) {
-        String mockOrderId = "mock_order_" + UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-
-        Payment payment = new Payment();
-        payment.setTeamId(team.getId());
-        payment.setEventId(event.getId());
-        payment.setAmount(fee);
-        payment.setCurrency("INR");
-        payment.setRazorpayOrderId(mockOrderId);
-        payment.setStatus(PaymentRecordStatus.ORDER_CREATED);
-        Payment savedPayment = paymentRepository.save(payment);
-
-        team.setPaymentRecordId(savedPayment.getId());
-        team.setRazorpayOrderId(mockOrderId);
-        team.setPaymentStatus(PaymentStatus.PENDING);
-        teamRepository.save(team);
-
-        return new PaymentOrderResponse(team.getId(), mockOrderId, "MOCK_MODE", fee, "INR");
-    }
-
     private BigDecimal calculatePayableFee(HackathonEvent event, int teamSize) {
         BigDecimal totalEventFee = event.getRegistrationFee();
         if (totalEventFee == null || totalEventFee.compareTo(BigDecimal.ZERO) <= 0) {
@@ -254,10 +214,6 @@ public class PaymentService {
 
         return perMemberFee.multiply(BigDecimal.valueOf(payableMembers))
                 .setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private boolean isMockOrder(String orderId) {
-        return orderId != null && orderId.startsWith("mock_order_");
     }
 
     private String generateRazorpayReceipt(String teamId) {
