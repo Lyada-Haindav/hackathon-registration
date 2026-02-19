@@ -1,5 +1,8 @@
 package com.example.hackathon.service;
 
+import com.example.hackathon.model.HackathonEvent;
+import com.example.hackathon.model.Payment;
+import com.example.hackathon.model.Team;
 import com.example.hackathon.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +18,8 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 @Service
@@ -30,6 +35,7 @@ public class EmailService {
     private final String brevoApiKey;
     private final String brevoApiUrl;
     private final HttpClient httpClient;
+    private static final DateTimeFormatter EVENT_DATE_FORMATTER = DateTimeFormatter.ofPattern("dd MMM uuuu");
 
     public EmailService(JavaMailSender mailSender,
                         @Value("${app.email.enabled:false}") boolean emailEnabled,
@@ -75,6 +81,26 @@ public class EmailService {
                 + "Use the link below to set a new password:\n"
                 + resetUrl + "\n\n"
                 + "If you did not request this, ignore this email.\n\n"
+                + "KLH Hackathon Registration";
+        sendTextEmail(user.getEmail(), subject, body);
+    }
+
+    public void sendPaymentConfirmationEmail(User user, Team team, HackathonEvent event, Payment payment) {
+        String subject = "Payment confirmed for " + event.getTitle();
+        String eventDates = formatEventDateRange(event.getStartDate(), event.getEndDate());
+        String paymentAmount = formatPaymentAmount(payment);
+        String paymentId = safeValue(payment.getRazorpayPaymentId());
+        String orderId = safeValue(payment.getRazorpayOrderId());
+
+        String body = "Hello " + user.getName() + ",\n\n"
+                + "Your registration payment has been confirmed.\n\n"
+                + "Event: " + event.getTitle() + "\n"
+                + "Event Dates: " + eventDates + "\n"
+                + "Team Name: " + safeValue(team.getTeamName()) + "\n"
+                + "Payment Amount: " + paymentAmount + "\n"
+                + "Payment ID: " + paymentId + "\n"
+                + "Order ID: " + orderId + "\n\n"
+                + "Thank you for registering. See you at the hackathon.\n\n"
                 + "KLH Hackathon Registration";
         sendTextEmail(user.getEmail(), subject, body);
     }
@@ -204,6 +230,33 @@ public class EmailService {
     private boolean isPlaceholderValue(String value) {
         String v = value == null ? "" : value.trim().toLowerCase(Locale.ROOT);
         return v.isBlank() || v.contains("<") || v.contains(">") || v.contains("your-");
+    }
+
+    private String formatEventDateRange(LocalDate startDate, LocalDate endDate) {
+        if (startDate == null && endDate == null) {
+            return "To be announced";
+        }
+        if (startDate == null) {
+            return endDate.format(EVENT_DATE_FORMATTER);
+        }
+        if (endDate == null) {
+            return startDate.format(EVENT_DATE_FORMATTER);
+        }
+        return startDate.format(EVENT_DATE_FORMATTER) + " to " + endDate.format(EVENT_DATE_FORMATTER);
+    }
+
+    private String formatPaymentAmount(Payment payment) {
+        if (payment == null || payment.getAmount() == null) {
+            return "INR 0.00";
+        }
+        return "INR " + payment.getAmount().setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+    }
+
+    private String safeValue(String value) {
+        if (value == null || value.isBlank()) {
+            return "N/A";
+        }
+        return value.trim();
     }
 
     private String jsonEscape(String value) {

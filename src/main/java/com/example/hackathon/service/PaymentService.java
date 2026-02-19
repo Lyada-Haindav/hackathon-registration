@@ -10,6 +10,7 @@ import com.example.hackathon.model.Payment;
 import com.example.hackathon.model.PaymentRecordStatus;
 import com.example.hackathon.model.PaymentStatus;
 import com.example.hackathon.model.Team;
+import com.example.hackathon.model.User;
 import com.example.hackathon.repository.PaymentRepository;
 import com.example.hackathon.repository.TeamRepository;
 import com.example.hackathon.util.SignatureUtil;
@@ -19,6 +20,8 @@ import com.razorpay.RazorpayException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,10 +31,14 @@ import java.util.UUID;
 @Service
 public class PaymentService {
 
+    private static final Logger log = LoggerFactory.getLogger(PaymentService.class);
+
     private final PaymentRepository paymentRepository;
     private final TeamService teamService;
     private final TeamRepository teamRepository;
     private final EventService eventService;
+    private final UserService userService;
+    private final EmailService emailService;
 
     @Value("${app.razorpay.key-id}")
     private String razorpayKeyId;
@@ -48,11 +55,15 @@ public class PaymentService {
     public PaymentService(PaymentRepository paymentRepository,
                           TeamService teamService,
                           TeamRepository teamRepository,
-                          EventService eventService) {
+                          EventService eventService,
+                          UserService userService,
+                          EmailService emailService) {
         this.paymentRepository = paymentRepository;
         this.teamService = teamService;
         this.teamRepository = teamRepository;
         this.eventService = eventService;
+        this.userService = userService;
+        this.emailService = emailService;
     }
 
     public PaymentOrderResponse createOrder(String userEmail, String teamId) {
@@ -65,7 +76,8 @@ public class PaymentService {
 
         BigDecimal fee = calculatePayableFee(event, team.getTeamSize());
         if (fee.compareTo(BigDecimal.ZERO) <= 0) {
-            markFreeRegistration(team, event);
+            Payment saved = markFreeRegistration(team, event);
+            sendPaymentConfirmationSafely(userEmail, team, event, saved);
             return new PaymentOrderResponse(team.getId(), "FREE_REGISTRATION", razorpayKeyId, BigDecimal.ZERO, "INR");
         }
 
@@ -119,6 +131,11 @@ public class PaymentService {
 
     public PaymentVerificationResponse verifyPayment(String userEmail, String teamId, PaymentVerificationRequest request) {
         Team team = teamService.getTeamEntityForUser(teamId, userEmail);
+        HackathonEvent event = eventService.getEventEntity(team.getEventId());
+
+        if (team.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            return new PaymentVerificationResponse(team.getId(), team.getPaymentStatus(), "Payment already verified");
+        }
 
         if (team.getRazorpayOrderId() == null || !team.getRazorpayOrderId().equals(request.razorpayOrderId())) {
             throw new BadRequestException("Order does not match team registration");
@@ -138,7 +155,11 @@ public class PaymentService {
             team.setPaymentStatus(PaymentStatus.SUCCESS);
             teamRepository.save(team);
 
-            return new PaymentVerificationResponse(team.getId(), team.getPaymentStatus(), "Mock payment verified successfully");
+            boolean emailSent = sendPaymentConfirmationSafely(userEmail, team, event, payment);
+            String message = emailSent
+                    ? "Mock payment verified successfully. Confirmation email sent."
+                    : "Mock payment verified successfully. Confirmation email could not be sent.";
+            return new PaymentVerificationResponse(team.getId(), team.getPaymentStatus(), message);
         }
 
         String payload = request.razorpayOrderId() + "|" + request.razorpayPaymentId();
@@ -156,7 +177,11 @@ public class PaymentService {
             team.setPaymentStatus(PaymentStatus.SUCCESS);
             teamRepository.save(team);
 
-            return new PaymentVerificationResponse(team.getId(), team.getPaymentStatus(), "Payment verified successfully");
+            boolean emailSent = sendPaymentConfirmationSafely(userEmail, team, event, payment);
+            String message = emailSent
+                    ? "Payment verified successfully. Confirmation email sent."
+                    : "Payment verified successfully. Confirmation email could not be sent.";
+            return new PaymentVerificationResponse(team.getId(), team.getPaymentStatus(), message);
         }
 
         payment.setStatus(PaymentRecordStatus.SIGNATURE_MISMATCH);
@@ -168,7 +193,7 @@ public class PaymentService {
         return new PaymentVerificationResponse(team.getId(), team.getPaymentStatus(), "Payment signature validation failed");
     }
 
-    private void markFreeRegistration(Team team, HackathonEvent event) {
+    private Payment markFreeRegistration(Team team, HackathonEvent event) {
         Payment payment = new Payment();
         payment.setTeamId(team.getId());
         payment.setEventId(event.getId());
@@ -184,6 +209,7 @@ public class PaymentService {
         team.setRazorpayOrderId("FREE_REGISTRATION");
         team.setRazorpayPaymentId("FREE_REGISTRATION");
         teamRepository.save(team);
+        return saved;
     }
 
     private void validateRazorpayConfig() {
@@ -264,5 +290,16 @@ public class PaymentService {
 
         String normalized = value.toLowerCase();
         return normalized.contains("replace_me") || normalized.contains("replace");
+    }
+
+    private boolean sendPaymentConfirmationSafely(String userEmail, Team team, HackathonEvent event, Payment payment) {
+        try {
+            User user = userService.findByEmail(userEmail);
+            emailService.sendPaymentConfirmationEmail(user, team, event, payment);
+            return true;
+        } catch (Exception ex) {
+            log.warn("Payment confirmed for team '{}' but confirmation email failed: {}", team.getId(), ex.getMessage());
+            return false;
+        }
     }
 }
