@@ -698,6 +698,7 @@ function renderMyTeams(teams) {
     }
 
     teams.forEach((team) => {
+        const isPaymentSuccess = String(team.paymentStatus || "").toUpperCase() === "SUCCESS";
         const card = document.createElement("div");
         card.className = "mini-card";
         card.innerHTML = `
@@ -707,15 +708,18 @@ function renderMyTeams(teams) {
             <p>Payment: <strong>${team.paymentStatus}</strong></p>
             <p>Problem: ${team.selectedProblemStatementTitle || "Not selected"}</p>
             <p>Score: ${Number(team.totalScore || 0).toFixed(2)}</p>
-            <button type="button" class="ghost-btn small" data-team-id="${team.teamId}">Pay / Retry</button>
+            ${isPaymentSuccess ? "<p class='muted'>Payment completed.</p>" : `<button type="button" class="ghost-btn small" data-team-id="${team.teamId}">Pay / Retry</button>`}
         `;
 
-        card.querySelector("button").addEventListener("click", () => {
-            document.getElementById("paymentTeamId").value = team.teamId;
-            state.registeredTeam = team;
-            renderTeamConfirmation(team);
-            setStep(4);
-        });
+        const payButton = card.querySelector("button");
+        if (payButton) {
+            payButton.addEventListener("click", () => {
+                document.getElementById("paymentTeamId").value = team.teamId;
+                state.registeredTeam = team;
+                renderTeamConfirmation(team);
+                setStep(4);
+            });
+        }
 
         container.appendChild(card);
     });
