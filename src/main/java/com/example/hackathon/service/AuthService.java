@@ -83,7 +83,7 @@ public class AuthService {
         if (user.getRole() == Role.FACULTY) {
             throw new BadRequestException("Organizer must use the organizer login page with secret code");
         }
-        if (userEmailVerificationRequired && emailService.isEnabled() && !user.isEmailVerified()) {
+        if (userEmailVerificationRequired && !user.isEmailVerified()) {
             throw new BadRequestException("Please verify your email before login. Use resend verification to get a new link.");
         }
 
@@ -213,13 +213,16 @@ public class AuthService {
 
     private AuthResponse registerWithRole(RegisterRequest request, Role role) {
         String normalizedEmail = userService.normalizeEmail(request.email());
+        if (role == Role.USER && userEmailVerificationRequired) {
+            ensureEmailServiceEnabled();
+        }
+
         if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             User existing = userService.findByEmail(normalizedEmail);
             if (role == Role.USER
                     && existing.getRole() == Role.USER
                     && !existing.isEmailVerified()
-                    && userEmailVerificationRequired
-                    && emailService.isEnabled()) {
+                    && userEmailVerificationRequired) {
                 sendVerificationMail(existing);
                 return new AuthResponse(
                         null,
@@ -242,7 +245,7 @@ public class AuthService {
         if (role == Role.FACULTY) {
             user.setEmailVerified(true);
         } else {
-            user.setEmailVerified(!(userEmailVerificationRequired && emailService.isEnabled()));
+            user.setEmailVerified(!userEmailVerificationRequired);
         }
 
         User saved;

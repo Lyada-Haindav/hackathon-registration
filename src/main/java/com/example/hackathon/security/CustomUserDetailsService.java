@@ -17,14 +17,11 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserService userService;
     private final boolean userEmailVerificationRequired;
-    private final boolean emailEnabled;
 
     public CustomUserDetailsService(UserService userService,
-                                    @Value("${app.auth.user-email-verification-required:true}") boolean userEmailVerificationRequired,
-                                    @Value("${app.email.enabled:false}") boolean emailEnabled) {
+                                    @Value("${app.auth.user-email-verification-required:true}") boolean userEmailVerificationRequired) {
         this.userService = userService;
         this.userEmailVerificationRequired = userEmailVerificationRequired;
-        this.emailEnabled = emailEnabled;
     }
 
     @Override
@@ -36,7 +33,7 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found");
         }
 
-        boolean verificationGateEnabled = userEmailVerificationRequired && emailEnabled;
+        boolean verificationGateEnabled = userEmailVerificationRequired;
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
