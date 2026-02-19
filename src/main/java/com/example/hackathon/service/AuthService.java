@@ -11,6 +11,7 @@ import com.example.hackathon.model.User;
 import com.example.hackathon.repository.UserRepository;
 import com.example.hackathon.security.JwtService;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -22,17 +23,20 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepository;
+    private final UserService userService;
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final String facultySecretCode;
 
     public AuthService(UserRepository userRepository,
+                       UserService userService,
                        PasswordEncoder passwordEncoder,
                        AuthenticationManager authenticationManager,
                        JwtService jwtService,
                        @Value("${app.faculty.secret-code:KLHAZ}") String facultySecretCode) {
         this.userRepository = userRepository;
+        this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.authenticationManager = authenticationManager;
         this.jwtService = jwtService;
@@ -52,12 +56,12 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        String email = userService.normalizeEmail(request.email());
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+                new UsernamePasswordAuthenticationToken(email, request.password())
         );
 
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new BadRequestException("Invalid credentials"));
+        User user = userService.findByEmail(email);
         if (user.getRole() == Role.FACULTY) {
             throw new BadRequestException("Faculty must use the faculty login page with secret code");
         }
@@ -70,12 +74,12 @@ public class AuthService {
             throw new BadRequestException("Invalid faculty secret code");
         }
 
+        String email = userService.normalizeEmail(request.email());
         authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.email(), request.password())
+                new UsernamePasswordAuthenticationToken(email, request.password())
         );
 
-        User user = userRepository.findByEmail(request.email())
-                .orElseThrow(() -> new BadRequestException("Invalid credentials"));
+        User user = userService.findByEmail(email);
         if (user.getRole() != Role.FACULTY) {
             throw new BadRequestException("Only faculty accounts can use this login");
         }
@@ -84,28 +88,37 @@ public class AuthService {
     }
 
     public User ensureFacultyUser(String name, String email, String rawPassword) {
-        return userRepository.findByEmail(email).orElseGet(() -> {
-            User user = new User();
-            user.setName(name);
-            user.setEmail(email);
-            user.setPassword(passwordEncoder.encode(rawPassword));
-            user.setRole(Role.FACULTY);
-            return userRepository.save(user);
-        });
+        String normalizedEmail = userService.normalizeEmail(email);
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+            return userService.findByEmail(normalizedEmail);
+        }
+
+        User user = new User();
+        user.setName(name);
+        user.setEmail(normalizedEmail);
+        user.setPassword(passwordEncoder.encode(rawPassword));
+        user.setRole(Role.FACULTY);
+        return userRepository.save(user);
     }
 
     private AuthResponse registerWithRole(RegisterRequest request, Role role) {
-        if (userRepository.existsByEmail(request.email())) {
+        String normalizedEmail = userService.normalizeEmail(request.email());
+        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
             throw new BadRequestException("Email is already registered");
         }
 
         User user = new User();
         user.setName(request.name());
-        user.setEmail(request.email());
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(request.password()));
         user.setRole(role);
 
-        User saved = userRepository.save(user);
+        User saved;
+        try {
+            saved = userRepository.save(user);
+        } catch (DuplicateKeyException ex) {
+            throw new BadRequestException("Email is already registered");
+        }
 
         return buildAuthResponse(saved);
     }

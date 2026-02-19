@@ -1,7 +1,7 @@
 package com.example.hackathon.security;
 
 import com.example.hackathon.model.User;
-import com.example.hackathon.repository.UserRepository;
+import com.example.hackathon.service.UserService;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -13,16 +13,20 @@ import java.util.List;
 @Service
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public CustomUserDetailsService(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public CustomUserDetailsService(UserService userService) {
+        this.userService = userService;
     }
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByEmail(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        User user;
+        try {
+            user = userService.findByEmail(username);
+        } catch (Exception ex) {
+            throw new UsernameNotFoundException("User not found");
+        }
 
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
