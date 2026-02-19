@@ -777,7 +777,7 @@ function renderTeams(teams) {
             }
 
             const params = new URLSearchParams({ eventId: team.eventId, teamId: team.teamId });
-            window.location.href = `/faculty/evaluation?${params.toString()}`;
+            window.location.href = `/organizer/evaluation?${params.toString()}`;
         });
 
         container.appendChild(card);

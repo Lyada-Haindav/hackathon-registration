@@ -11,6 +11,14 @@
 })();
 
 function setSession(auth) {
+    if (!auth || !auth.token) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("role");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("name");
+        localStorage.removeItem("email");
+        return;
+    }
     localStorage.setItem("token", auth.token);
     localStorage.setItem("role", auth.role);
     localStorage.setItem("userId", auth.userId);

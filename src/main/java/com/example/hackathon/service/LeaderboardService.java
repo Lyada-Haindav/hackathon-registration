@@ -23,7 +23,7 @@ public class LeaderboardService {
 
     public List<LeaderboardEntryResponse> getLeaderboard(String eventId, boolean facultyViewer) {
         if (!facultyViewer && !eventService.getEventEntity(eventId).isLeaderboardVisible()) {
-            throw new BadRequestException("Leaderboard is not published by faculty for this event yet");
+            throw new BadRequestException("Leaderboard is not published by organizer for this event yet");
         }
 
         List<Team> sortedTeams = teamRepository.findByEventId(eventId).stream()

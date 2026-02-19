@@ -16,9 +16,14 @@ public class WebController {
         return "login";
     }
 
-    @GetMapping("/faculty-login")
-    public String facultyLogin() {
+    @GetMapping("/organizer/login")
+    public String organizerLogin() {
         return "faculty-login";
+    }
+
+    @GetMapping("/faculty-login")
+    public String facultyLoginRedirect() {
+        return "redirect:/organizer/login";
     }
 
     @GetMapping("/register")
@@ -26,44 +31,109 @@ public class WebController {
         return "register";
     }
 
-    @GetMapping("/faculty-register")
-    public String facultyRegister() {
+    @GetMapping("/forgot-password")
+    public String forgotPassword() {
+        return "forgot-password";
+    }
+
+    @GetMapping("/resend-verification")
+    public String resendVerification() {
+        return "resend-verification";
+    }
+
+    @GetMapping("/reset-password")
+    public String resetPassword() {
+        return "reset-password";
+    }
+
+    @GetMapping("/verify-email")
+    public String verifyEmail() {
+        return "verify-email";
+    }
+
+    @GetMapping("/organizer/register")
+    public String organizerRegister() {
         return "faculty-register";
     }
 
-    @GetMapping("/faculty")
-    public String faculty() {
+    @GetMapping("/faculty-register")
+    public String facultyRegisterRedirect() {
+        return "redirect:/organizer/register";
+    }
+
+    @GetMapping("/organizer")
+    public String organizerAccess() {
+        return "organizer-access";
+    }
+
+    @GetMapping("/organizer/dashboard")
+    public String organizerDashboard() {
         return "faculty-dashboard";
     }
 
-    @GetMapping("/faculty/events")
-    public String facultyEvents() {
+    @GetMapping("/organizer/events")
+    public String organizerEvents() {
         return "faculty-events";
     }
 
-    @GetMapping("/faculty/forms")
-    public String facultyForms() {
+    @GetMapping("/organizer/forms")
+    public String organizerForms() {
         return "faculty-forms";
     }
 
-    @GetMapping("/faculty/problems")
-    public String facultyProblems() {
+    @GetMapping("/organizer/problems")
+    public String organizerProblems() {
         return "faculty-problems";
     }
 
-    @GetMapping("/faculty/evaluation")
-    public String facultyEvaluation() {
+    @GetMapping("/organizer/evaluation")
+    public String organizerEvaluation() {
         return "faculty-evaluation";
     }
 
-    @GetMapping("/faculty/teams")
-    public String facultyTeams() {
+    @GetMapping("/organizer/teams")
+    public String organizerTeams() {
         return "faculty-teams";
     }
 
-    @GetMapping("/faculty/deployment")
-    public String facultyDeployment() {
+    @GetMapping("/organizer/deployment")
+    public String organizerDeployment() {
         return "faculty-deployment";
+    }
+
+    @GetMapping("/faculty")
+    public String facultyDashboardRedirect() {
+        return "redirect:/organizer/dashboard";
+    }
+
+    @GetMapping("/faculty/events")
+    public String facultyEventsRedirect() {
+        return "redirect:/organizer/events";
+    }
+
+    @GetMapping("/faculty/forms")
+    public String facultyFormsRedirect() {
+        return "redirect:/organizer/forms";
+    }
+
+    @GetMapping("/faculty/problems")
+    public String facultyProblemsRedirect() {
+        return "redirect:/organizer/problems";
+    }
+
+    @GetMapping("/faculty/evaluation")
+    public String facultyEvaluationRedirect() {
+        return "redirect:/organizer/evaluation";
+    }
+
+    @GetMapping("/faculty/teams")
+    public String facultyTeamsRedirect() {
+        return "redirect:/organizer/teams";
+    }
+
+    @GetMapping("/faculty/deployment")
+    public String facultyDeploymentRedirect() {
+        return "redirect:/organizer/deployment";
     }
 
     @GetMapping("/user")

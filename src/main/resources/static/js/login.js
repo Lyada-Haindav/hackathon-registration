@@ -3,6 +3,8 @@ const messageEl = document.getElementById("message");
 
 loginForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const submitButton = loginForm.querySelector("button[type='submit']");
+    submitButton.disabled = true;
     const formData = new FormData(loginForm);
     const body = {
         email: formData.get("email"),
@@ -17,8 +19,10 @@ loginForm.addEventListener("submit", async (event) => {
 
         setSession(response);
         messageEl.textContent = "Login successful";
-        window.location.href = response.role === "FACULTY" ? "/faculty" : "/user";
+        window.location.href = response.role === "FACULTY" ? "/organizer/dashboard" : "/user";
     } catch (error) {
         messageEl.textContent = error.message;
+    } finally {
+        submitButton.disabled = false;
     }
 });

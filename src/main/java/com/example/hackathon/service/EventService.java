@@ -182,7 +182,7 @@ public class EventService {
         }
 
         if (!event.isRegistrationOpen()) {
-            throw new BadRequestException("Registration is currently closed for this event. Wait for faculty to open registrations.");
+            throw new BadRequestException("Registration is currently closed for this event. Wait for organizer to open registrations.");
         }
     }
 

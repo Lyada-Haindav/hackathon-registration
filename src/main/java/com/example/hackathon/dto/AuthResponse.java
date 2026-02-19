@@ -5,6 +5,11 @@ public record AuthResponse(
         String userId,
         String name,
         String email,
-        String role
+        String role,
+        Boolean emailVerificationRequired,
+        String message
 ) {
+    public AuthResponse(String token, String userId, String name, String email, String role) {
+        this(token, userId, name, email, role, false, null);
+    }
 }

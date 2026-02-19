@@ -5,6 +5,17 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb+srv://nanihaindav99145_db_user:Haindav1@cluster0.tkl0k00.mongodb.net/hackathon_db?retryWrites=true&w=majority&appName=Cluster0}
+  mail:
+    host: ${SMTP_HOST:smtp-relay.brevo.com}
+    port: ${SMTP_PORT:587}
+    username: ${SMTP_USERNAME:}
+    password: ${SMTP_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SMTP_AUTH:true}
+          starttls:
+            enable: ${SMTP_STARTTLS_ENABLE:true}
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -24,6 +35,15 @@ app:
     password: ${ADMIN_PASSWORD:Admin@123}
   faculty:
     secret-code: ${FACULTY_SECRET_CODE:KLHAZ}
+  auth:
+    user-email-verification-required: ${USER_EMAIL_VERIFICATION_REQUIRED:true}
+    email-verification-ttl-minutes: ${EMAIL_VERIFICATION_TTL_MINUTES:1440}
+    password-reset-ttl-minutes: ${PASSWORD_RESET_TTL_MINUTES:30}
+  email:
+    enabled: ${EMAIL_ENABLED:false}
+    from: ${EMAIL_FROM:no-reply@hackathonregister123.com}
+  web:
+    base-url: ${APP_BASE_URL:http://localhost:8080}
 
 management:
   endpoints:

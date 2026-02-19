@@ -869,6 +869,26 @@ body.dashboard-bg .faculty-hub-grid .hub-card:hover h3 {
     color: #ffd6ab;
 }
 
+/* Organizer access cards use light panels inside auth pages; force high-contrast text. */
+body.auth-page .organizer-access-grid .card {
+    color: #132652;
+    background: linear-gradient(165deg, #ffffff 0%, #f3f6ff 100%);
+    border: 1px solid rgba(135, 168, 255, 0.38);
+}
+
+body.auth-page .organizer-access-grid .card h3 {
+    color: #132652;
+}
+
+body.auth-page .organizer-access-grid .card p {
+    color: #4a5f92;
+}
+
+body.auth-page .organizer-access-grid .card:hover {
+    border-color: #8ab1ff;
+    background: linear-gradient(165deg, #ffffff 0%, #e8eeff 100%);
+}
+
 .home-page {
     min-height: 100vh;
     background: radial-gradient(circle at 5% 10%, #ffe5cc 0%, #f7f4ee 30%, #f5f5ff 65%, #eef4ff 100%);
@@ -1886,6 +1906,31 @@ body.dashboard-bg .review-grid section li {
 
 body.dashboard-bg .review-grid section strong {
     color: #ffd4a6;
+}
+
+/* Keep popup dialogs readable on dark themed pages. */
+body.dashboard-bg .modal-card,
+body.auth-page .modal-card {
+    background: linear-gradient(160deg, rgba(10, 21, 50, 0.95), rgba(12, 28, 66, 0.92));
+    border: 1px solid rgba(150, 180, 255, 0.42);
+    color: #f4f8ff;
+    box-shadow: 0 22px 42px rgba(4, 8, 24, 0.56);
+}
+
+body.dashboard-bg .modal-title,
+body.auth-page .modal-title {
+    color: #f7fbff;
+}
+
+body.dashboard-bg .modal-body,
+body.auth-page .modal-body {
+    color: #c8d7f5;
+}
+
+body.dashboard-bg .modal-overlay.error .modal-card,
+body.auth-page .modal-overlay.error .modal-card {
+    background: linear-gradient(160deg, rgba(79, 20, 20, 0.9), rgba(113, 30, 30, 0.82));
+    border-color: rgba(255, 151, 146, 0.56);
 }
 
 @keyframes neoPanelIn {

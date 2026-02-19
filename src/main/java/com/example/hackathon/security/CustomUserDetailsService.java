@@ -1,7 +1,9 @@
 package com.example.hackathon.security;
 
 import com.example.hackathon.model.User;
+import com.example.hackathon.model.Role;
 import com.example.hackathon.service.UserService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -14,9 +16,15 @@ import java.util.List;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserService userService;
+    private final boolean userEmailVerificationRequired;
+    private final boolean emailEnabled;
 
-    public CustomUserDetailsService(UserService userService) {
+    public CustomUserDetailsService(UserService userService,
+                                    @Value("${app.auth.user-email-verification-required:true}") boolean userEmailVerificationRequired,
+                                    @Value("${app.email.enabled:false}") boolean emailEnabled) {
         this.userService = userService;
+        this.userEmailVerificationRequired = userEmailVerificationRequired;
+        this.emailEnabled = emailEnabled;
     }
 
     @Override
@@ -28,10 +36,12 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found");
         }
 
+        boolean verificationGateEnabled = userEmailVerificationRequired && emailEnabled;
+
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
-                user.isActive(),
+                user.isActive() && (user.getRole() == Role.FACULTY || !verificationGateEnabled || user.isEmailVerified()),
                 true,
                 true,
                 true,

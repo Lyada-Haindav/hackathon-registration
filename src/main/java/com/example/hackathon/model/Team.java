@@ -21,6 +21,7 @@ public class Team {
     @Indexed(unique = true)
     private String userId;
 
+    @Indexed(unique = true)
     private String teamName;
 
     private int teamSize;

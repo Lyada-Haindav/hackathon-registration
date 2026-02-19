@@ -13,5 +13,7 @@ public interface TeamRepository extends MongoRepository<Team, String> {
 
     List<Team> findByUserId(String userId);
 
+    boolean existsByTeamName(String teamName);
+
     void deleteByEventId(String eventId);
 }

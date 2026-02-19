@@ -3,6 +3,8 @@ const messageEl = document.getElementById("message");
 
 registerForm.addEventListener("submit", async (event) => {
     event.preventDefault();
+    const submitButton = registerForm.querySelector("button[type='submit']");
+    submitButton.disabled = true;
 
     const formData = new FormData(registerForm);
     const body = {
@@ -17,10 +19,22 @@ registerForm.addEventListener("submit", async (event) => {
             body
         }, false);
 
+        if (response.emailVerificationRequired) {
+            setSession(null);
+            messageEl.textContent = response.message || "Verification email sent. Please verify your email before login.";
+            registerForm.reset();
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 1800);
+            return;
+        }
+
         setSession(response);
         messageEl.textContent = "Registration successful";
         window.location.href = "/user";
     } catch (error) {
         messageEl.textContent = error.message;
+    } finally {
+        submitButton.disabled = false;
     }
 });

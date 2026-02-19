@@ -12,6 +12,7 @@ Production-style full stack Java web application built with **Spring Boot + Mong
 
 ## Core Capabilities
 - User + Faculty login with JWT authentication
+- Participant email verification + forgot/reset password using email links
 - Faculty can create events, dynamic registration forms, fees, criteria, and problem statements
 - User can register teams, submit dynamic form responses, pay via Razorpay, and track status
 - Faculty evaluation module with editable criterion-based scoring
@@ -135,6 +136,15 @@ src/main/resources
 - `evaluatedAt`
 - `totalScore`
 
+### `authTokens`
+- `_id`
+- `token` (unique)
+- `userId`
+- `email`
+- `type` (`EMAIL_VERIFICATION` / `PASSWORD_RESET`)
+- `expiresAt` (TTL index)
+- `createdAt`
+
 ## Leaderboard Logic
 1. Faculty submits criterion-wise scores for a team.
 2. System upserts evaluation records (`eventId + teamId + criterionId`).
@@ -159,6 +169,10 @@ src/main/resources
 ### Auth
 - `POST /api/auth/register`
 - `POST /api/auth/login`
+- `GET /api/auth/verify-email?token=...`
+- `POST /api/auth/resend-verification`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
 
 ### User APIs
 - `GET /api/user/events`
@@ -212,10 +226,24 @@ src/main/resources
    - `ADMIN_PASSWORD`
    - `RAZORPAY_KEY_ID`
    - `RAZORPAY_KEY_SECRET`
+   - `EMAIL_ENABLED`
+   - `EMAIL_FROM`
+   - `APP_BASE_URL`
+   - `SMTP_HOST`
+   - `SMTP_PORT`
+   - `SMTP_USERNAME`
+   - `SMTP_PASSWORD`
 5. Deploy and open your Render URL:
    - `https://<your-service-name>.onrender.com`
 6. Verify readiness from faculty portal:
    - `/faculty/deployment`
+
+### Free Email Setup (Brevo)
+1. Create a Brevo account and generate an SMTP key.
+2. Set `EMAIL_ENABLED=true`.
+3. Set SMTP vars (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD`).
+4. Set `EMAIL_FROM` to a verified sender/domain in Brevo.
+5. Set `APP_BASE_URL` to your deployed URL so verification/reset links open correctly.
 
 ## Deploy on Vercel (as public entry/proxy)
 Vercel cannot run this Spring Boot server directly as a long-running process.  

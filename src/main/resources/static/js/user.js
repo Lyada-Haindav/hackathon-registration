@@ -260,7 +260,7 @@ function renderDynamicFields(fields) {
     container.innerHTML = "";
 
     if (!fields.length) {
-        container.innerHTML = "<p class='muted'>No extra dynamic fields configured by faculty for this event.</p>";
+        container.innerHTML = "<p class='muted'>No extra dynamic fields configured by organizer for this event.</p>";
         return;
     }
 

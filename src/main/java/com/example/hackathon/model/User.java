@@ -28,6 +28,8 @@ public class User {
 
     private boolean active = true;
 
+    private boolean emailVerified = false;
+
     private Instant createdAt = Instant.now();
 
     public String getId() {
@@ -84,5 +86,13 @@ public class User {
 
     public void setCreatedAt(Instant createdAt) {
         this.createdAt = createdAt;
+    }
+
+    public boolean isEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 }

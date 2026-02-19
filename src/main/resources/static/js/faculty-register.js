@@ -20,7 +20,7 @@ facultyRegisterForm.addEventListener("submit", async (event) => {
 
         setSession(response);
         facultyRegisterMessageEl.textContent = "Organiser registration successful";
-        window.location.href = "/faculty";
+        window.location.href = "/organizer/dashboard";
     } catch (error) {
         facultyRegisterMessageEl.textContent = error.message;
     }

@@ -19,7 +19,7 @@ facultyLoginForm.addEventListener("submit", async (event) => {
 
         setSession(response);
         facultyMessageEl.textContent = "Organiser login successful";
-        window.location.href = "/faculty";
+        window.location.href = "/organizer/dashboard";
     } catch (error) {
         facultyMessageEl.textContent = error.message;
     }

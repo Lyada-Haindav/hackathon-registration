@@ -51,6 +51,11 @@ public class UserService {
         return pickPreferredUser(candidates);
     }
 
+    public User findById(String userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
+    }
+
     public String normalizeEmail(String email) {
         if (email == null) {
             return "";

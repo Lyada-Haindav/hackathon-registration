@@ -23,8 +23,8 @@ function setupBackLink() {
 
     const role = getRole();
     if (role === "FACULTY") {
-        link.textContent = "Faculty Dashboard";
-        link.href = "/faculty";
+        link.textContent = "Organizer Dashboard";
+        link.href = "/organizer/dashboard";
         return;
     }
 
@@ -77,7 +77,7 @@ function renderLeaderboard(entries) {
     container.innerHTML = "";
 
     if (!entries.length) {
-        container.innerHTML = "<p class='muted'>No rankings yet. Faculty evaluation marks are pending.</p>";
+        container.innerHTML = "<p class='muted'>No rankings yet. Organizer evaluation marks are pending.</p>";
         return;
     }
 
@@ -116,7 +116,7 @@ async function loadEvents() {
         renderEvents(events);
 
         if (!events.length && role === "USER") {
-            setMessage("Leaderboard is not published yet by faculty for active events.");
+            setMessage("Leaderboard is not published yet by organizer for active events.");
         }
     } catch (error) {
         setMessage(error.message, true);
@@ -132,7 +132,7 @@ async function loadLeaderboard() {
         const entries = await apiFetch(`/api/leaderboard/${state.selectedEventId}`);
         renderLeaderboard(entries);
         if (!entries.length) {
-            setMessage("Waiting for faculty evaluation marks.");
+            setMessage("Waiting for organizer evaluation marks.");
         } else {
             setMessage("Leaderboard updated in real time (high to low scores).");
         }

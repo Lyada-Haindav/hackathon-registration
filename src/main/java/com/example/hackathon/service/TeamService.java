@@ -14,6 +14,12 @@ import com.example.hackathon.model.User;
 import com.example.hackathon.repository.TeamMemberRepository;
 import com.example.hackathon.repository.TeamRepository;
 import com.example.hackathon.util.TeamNameGenerator;
+import com.mongodb.client.result.UpdateResult;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,6 +29,7 @@ public class TeamService {
 
     private static final int MIN_TEAM_MEMBERS = 1;
     private static final int MAX_TEAM_MEMBERS = 4;
+    private static final int TEAM_NAME_GENERATION_MAX_ATTEMPTS = 25;
 
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
@@ -31,6 +38,7 @@ public class TeamService {
     private final FormService formService;
     private final ProblemStatementService problemStatementService;
     private final TeamNameGenerator teamNameGenerator;
+    private final MongoTemplate mongoTemplate;
 
     public TeamService(TeamRepository teamRepository,
                        TeamMemberRepository teamMemberRepository,
@@ -38,7 +46,8 @@ public class TeamService {
                        EventService eventService,
                        FormService formService,
                        ProblemStatementService problemStatementService,
-                       TeamNameGenerator teamNameGenerator) {
+                       TeamNameGenerator teamNameGenerator,
+                       MongoTemplate mongoTemplate) {
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
         this.userService = userService;
@@ -46,6 +55,7 @@ public class TeamService {
         this.formService = formService;
         this.problemStatementService = problemStatementService;
         this.teamNameGenerator = teamNameGenerator;
+        this.mongoTemplate = mongoTemplate;
     }
 
     public TeamResponse registerTeam(String userEmail, TeamRegistrationRequest request) {
@@ -68,11 +78,10 @@ public class TeamService {
         Team team = new Team();
         team.setEventId(request.eventId());
         team.setUserId(user.getId());
-        team.setTeamName(teamNameGenerator.generateUniqueName());
         team.setTeamSize(request.members().size());
         team.setFormResponses(request.formResponses());
 
-        Team savedTeam = teamRepository.save(team);
+        Team savedTeam = saveTeamWithUniqueName(team);
 
         List<TeamMember> members = request.members().stream().map(member -> toEntity(member, savedTeam.getId())).toList();
         teamMemberRepository.saveAll(members);
@@ -118,13 +127,26 @@ public class TeamService {
         if (!team.getEventId().equals(statement.getEventId())) {
             throw new BadRequestException("Selected problem statement does not belong to the team's event");
         }
-        if (team.getSelectedProblemStatementId() != null && !team.getSelectedProblemStatementId().isBlank()) {
+
+        Query updateAllowed = new Query(new Criteria().andOperator(
+                Criteria.where("_id").is(team.getId()),
+                new Criteria().orOperator(
+                        Criteria.where("selectedProblemStatementId").exists(false),
+                        Criteria.where("selectedProblemStatementId").is(null),
+                        Criteria.where("selectedProblemStatementId").is("")
+                )
+        ));
+
+        Update setProblem = new Update()
+                .set("selectedProblemStatementId", statement.getId())
+                .set("selectedProblemStatementTitle", statement.getTitle());
+
+        UpdateResult result = mongoTemplate.updateFirst(updateAllowed, setProblem, Team.class);
+        if (result.getModifiedCount() == 0) {
             throw new BadRequestException("Problem statement can be selected only once");
         }
 
-        team.setSelectedProblemStatementId(statement.getId());
-        team.setSelectedProblemStatementTitle(statement.getTitle());
-        Team saved = teamRepository.save(team);
+        Team saved = getTeamEntity(team.getId());
         return toTeamResponse(saved);
     }
 
@@ -176,5 +198,30 @@ public class TeamService {
         if (leaders != 1) {
             throw new BadRequestException("Exactly one team member must be marked as leader");
         }
+    }
+
+    private Team saveTeamWithUniqueName(Team team) {
+        for (int attempt = 0; attempt < TEAM_NAME_GENERATION_MAX_ATTEMPTS; attempt++) {
+            String candidate = teamNameGenerator.generateUniqueName();
+            if (teamRepository.existsByTeamName(candidate)) {
+                continue;
+            }
+
+            team.setTeamName(candidate);
+            try {
+                return teamRepository.save(team);
+            } catch (DuplicateKeyException ex) {
+                String normalizedMessage = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
+                if (normalizedMessage.contains("teamname")) {
+                    continue;
+                }
+                if (normalizedMessage.contains("userid") || normalizedMessage.contains("event_user_unique")) {
+                    throw new BadRequestException("User can register only one team in the system");
+                }
+                throw ex;
+            }
+        }
+
+        throw new BadRequestException("Unable to generate a unique team name. Please retry.");
     }
 }

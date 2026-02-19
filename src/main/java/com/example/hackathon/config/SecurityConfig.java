@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/login", "/faculty-login", "/faculty-register", "/register", "/faculty/**", "/user", "/problem-statements", "/leaderboard", "/top-teams", "/js/**", "/css/**", "/img/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/", "/login", "/faculty-login", "/faculty-register", "/organizer", "/organizer/**", "/register", "/forgot-password", "/resend-verification", "/reset-password", "/verify-email", "/faculty/**", "/user", "/problem-statements", "/leaderboard", "/top-teams", "/js/**", "/css/**", "/img/**", "/favicon.ico").permitAll()
                         .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/faculty/**").hasRole("FACULTY")
