@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Events</title>
+    <title>Organiser Events</title>
     <link rel="stylesheet" href="/css/styles.css?v=device_v1">
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=h3">
     <link rel="icon" type="image/png" sizes="32x32" href="/img/h-logo-32.png?v=h3">
@@ -15,19 +15,12 @@
 <div class="container">
     <header class="dashboard-header">
         <div>
-            <p class="eyebrow">Faculty Console</p>
+            <p class="eyebrow">Organiser Console</p>
             <h1 class="page-title">Event Management</h1>
             <p class="page-subtitle">Create and control hackathon events from one focused page.</p>
         </div>
-        <div class="header-actions faculty-nav">
-            <a class="ghost-link" href="/faculty">Overview</a>
-            <a class="ghost-link active-nav" href="/faculty/events">Events</a>
-            <a class="ghost-link" href="/faculty/forms">Forms</a>
-            <a class="ghost-link" href="/faculty/problems">Problems</a>
-            <a class="ghost-link" href="/faculty/evaluation">Evaluation</a>
-            <a class="ghost-link" href="/faculty/teams">Teams</a>
-            <a class="ghost-link" href="/leaderboard">Leaderboard</a>
-            <a class="ghost-link" href="/faculty/deployment">Deployment</a>
+        <div class="header-actions faculty-nav simple-nav">
+            <a class="ghost-link" href="/faculty">Organiser Home</a>
             <button class="danger-btn" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -47,6 +40,17 @@
         <form id="eventForm" class="grid-form top-gap">
             <input name="title" placeholder="Event Title" required>
             <input name="description" placeholder="Short Description" required>
+            <label class="full-span">Event Poster (Image File)
+                <input id="eventPosterFile" type="file" accept="image/png,image/jpeg,image/jpg,image/webp,image/gif">
+                <input type="hidden" name="posterUrl" id="eventPosterData">
+            </label>
+            <div id="eventPosterPreviewWrap" class="event-poster-preview hidden full-span">
+                <img id="eventPosterPreview" alt="Event poster preview">
+                <button id="eventPosterClearBtn" class="ghost-btn small" type="button">Remove Poster</button>
+            </div>
+            <label class="full-span">About Event
+                <textarea name="aboutEvent" rows="4" placeholder="Write full event details for home page"></textarea>
+            </label>
             <label>Start Date<input type="date" name="startDate" required></label>
             <label>End Date<input type="date" name="endDate" required></label>
             <label>Registration Opens<input type="date" name="registrationOpenDate" required></label>
@@ -74,6 +78,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/faculty.js?v=ready_v7"></script>
+<script src="/js/faculty.js?v=ready_v12"></script>
 </body>
 </html>

@@ -65,6 +65,8 @@ public class EventService {
         HackathonEvent event = new HackathonEvent();
         event.setTitle(request.title());
         event.setDescription(request.description());
+        event.setAboutEvent(normalizeText(request.aboutEvent()));
+        event.setPosterUrl(normalizeText(request.posterUrl()));
         event.setStartDate(request.startDate());
         event.setEndDate(request.endDate());
         event.setRegistrationOpenDate(request.registrationOpenDate());
@@ -90,6 +92,8 @@ public class EventService {
         HackathonEvent event = getEventEntity(eventId);
         event.setTitle(request.title());
         event.setDescription(request.description());
+        event.setAboutEvent(normalizeText(request.aboutEvent()));
+        event.setPosterUrl(normalizeText(request.posterUrl()));
         event.setStartDate(request.startDate());
         event.setEndDate(request.endDate());
         event.setRegistrationOpenDate(request.registrationOpenDate());
@@ -191,6 +195,8 @@ public class EventService {
                 event.getId(),
                 event.getTitle(),
                 event.getDescription(),
+                event.getAboutEvent(),
+                event.getPosterUrl(),
                 event.getStartDate(),
                 event.getEndDate(),
                 event.getRegistrationOpenDate(),
@@ -203,5 +209,13 @@ public class EventService {
                 event.isLeaderboardVisible(),
                 event.isOnHold()
         );
+    }
+
+    private String normalizeText(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

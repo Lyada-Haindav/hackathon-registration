@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Problems and Criteria</title>
+    <title>Organiser Problem Statements</title>
     <link rel="stylesheet" href="/css/styles.css?v=device_v1">
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=h3">
     <link rel="icon" type="image/png" sizes="32x32" href="/img/h-logo-32.png?v=h3">
@@ -15,19 +15,12 @@
 <div class="container">
     <header class="dashboard-header">
         <div>
-            <p class="eyebrow">Faculty Console</p>
-            <h1 class="page-title">Problems and Criteria</h1>
-            <p class="page-subtitle">Create problem statements and evaluation criteria in one place.</p>
+            <p class="eyebrow">Organiser Console</p>
+            <h1 class="page-title">Problem Statements</h1>
+            <p class="page-subtitle">Create and release problem statements for the selected event.</p>
         </div>
-        <div class="header-actions faculty-nav">
-            <a class="ghost-link" href="/faculty">Overview</a>
-            <a class="ghost-link" href="/faculty/events">Events</a>
-            <a class="ghost-link" href="/faculty/forms">Forms</a>
-            <a class="ghost-link active-nav" href="/faculty/problems">Problems</a>
-            <a class="ghost-link" href="/faculty/evaluation">Evaluation</a>
-            <a class="ghost-link" href="/faculty/teams">Teams</a>
-            <a class="ghost-link" href="/leaderboard">Leaderboard</a>
-            <a class="ghost-link" href="/faculty/deployment">Deployment</a>
+        <div class="header-actions faculty-nav simple-nav">
+            <a class="ghost-link" href="/faculty">Organiser Home</a>
             <button class="danger-btn" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -36,46 +29,39 @@
 
     <section class="simple-shell">
         <div class="section-title-row">
-            <h2>Quick Event Picker</h2>
-            <button onclick="loadFacultyEvents()">Refresh Events</button>
+            <h2>Select Event</h2>
+            <button type="button" onclick="loadFacultyEvents()">Refresh Events</button>
         </div>
-        <div id="facultyEventCards" class="event-cards"></div>
+        <label>Active Event
+            <select id="globalEventSelect"></select>
+        </label>
+        <p id="globalEventHint" class="muted top-gap"></p>
     </section>
 
-    <section class="dashboard-grid top-gap">
-        <article class="simple-shell">
-            <div class="section-title-row">
-                <h2>Problem Statements</h2>
-                <button class="ghost-btn" onclick="loadProblemsForEvent()" type="button">Load by Event</button>
-            </div>
+    <section class="simple-shell top-gap">
+        <div class="section-title-row">
+            <h2>Problem Statements</h2>
+            <button class="ghost-btn" onclick="loadProblemsForEvent()" type="button">Load by Event</button>
+        </div>
 
-            <form id="problemForm" class="stack">
-                <label>Event ID
-                    <input name="eventId" class="event-id-input" placeholder="Event ID" required>
-                </label>
-                <input name="title" placeholder="Problem Title" required>
-                <textarea name="description" rows="4" placeholder="Problem Description" required></textarea>
-                <button type="submit">Create Problem Statement</button>
-            </form>
+        <form id="problemForm" class="stack">
+            <label>Selected Event ID
+                <input name="eventId" class="event-id-input" placeholder="Auto-selected from the event picker" readonly required>
+            </label>
+            <input name="title" placeholder="Problem Title" required>
+            <textarea name="description" rows="4" placeholder="Problem Description" required></textarea>
+            <button type="submit">Create Problem Statement</button>
+        </form>
 
-            <div id="problemListForFaculty" class="list-stack top-gap"></div>
-        </article>
+        <div id="problemListForFaculty" class="list-stack top-gap"></div>
+    </section>
 
-        <article class="simple-shell">
-            <div class="section-title-row">
-                <h2>Evaluation Criteria</h2>
-                <button class="ghost-btn" onclick="loadCriteria()" type="button">Load Criteria</button>
-            </div>
-
-            <form id="criterionForm" class="grid-form">
-                <input name="eventId" class="event-id-input" placeholder="Event ID" required>
-                <input name="name" placeholder="Criterion Name (e.g. Innovation)" required>
-                <input type="number" step="0.01" name="maxMarks" placeholder="Max Marks" required>
-                <button type="submit">Add Criterion</button>
-            </form>
-
-            <div id="criteriaCards" class="list-stack top-gap"></div>
-        </article>
+    <section class="simple-shell top-gap">
+        <div class="section-title-row">
+            <h2>Problem Statement Selection Count</h2>
+            <button class="ghost-btn" onclick="loadProblemSelectionCounts()" type="button">Refresh Count</button>
+        </div>
+        <div id="problemSelectionCounts" class="list-stack"></div>
     </section>
 </div>
 
@@ -90,6 +76,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/faculty.js?v=ready_v7"></script>
+<script src="/js/faculty.js?v=ready_v12"></script>
 </body>
 </html>

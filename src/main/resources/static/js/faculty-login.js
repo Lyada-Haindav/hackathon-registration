@@ -18,7 +18,7 @@ facultyLoginForm.addEventListener("submit", async (event) => {
         }, false);
 
         setSession(response);
-        facultyMessageEl.textContent = "Faculty login successful";
+        facultyMessageEl.textContent = "Organiser login successful";
         window.location.href = "/faculty";
     } catch (error) {
         facultyMessageEl.textContent = error.message;

@@ -7,6 +7,8 @@ public record EventResponse(
         String id,
         String title,
         String description,
+        String aboutEvent,
+        String posterUrl,
         LocalDate startDate,
         LocalDate endDate,
         LocalDate registrationOpenDate,

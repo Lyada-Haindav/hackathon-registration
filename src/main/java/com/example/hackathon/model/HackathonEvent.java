@@ -22,6 +22,10 @@ public class HackathonEvent {
     @NotBlank
     private String description;
 
+    private String aboutEvent;
+
+    private String posterUrl;
+
     private LocalDate startDate;
 
     private LocalDate endDate;
@@ -68,6 +72,22 @@ public class HackathonEvent {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getAboutEvent() {
+        return aboutEvent;
+    }
+
+    public void setAboutEvent(String aboutEvent) {
+        this.aboutEvent = aboutEvent;
+    }
+
+    public String getPosterUrl() {
+        return posterUrl;
+    }
+
+    public void setPosterUrl(String posterUrl) {
+        this.posterUrl = posterUrl;
     }
 
     public LocalDate getStartDate() {

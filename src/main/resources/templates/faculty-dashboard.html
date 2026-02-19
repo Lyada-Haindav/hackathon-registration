@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Dashboard</title>
+    <title>Organiser Dashboard</title>
     <link rel="stylesheet" href="/css/styles.css?v=device_v1">
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=h3">
     <link rel="icon" type="image/png" sizes="32x32" href="/img/h-logo-32.png?v=h3">
@@ -15,19 +15,12 @@
 <div class="container">
     <header class="dashboard-header">
         <div>
-            <p class="eyebrow">Faculty Console</p>
-            <h1 class="page-title">Faculty Management Hub</h1>
+            <p class="eyebrow">Organiser Console</p>
+            <h1 class="page-title">Organiser Workspace</h1>
             <p class="page-subtitle">Manage each module in its own clean page.</p>
         </div>
-        <div class="header-actions faculty-nav">
-            <a class="ghost-link active-nav" href="/faculty">Overview</a>
-            <a class="ghost-link" href="/faculty/events">Events</a>
-            <a class="ghost-link" href="/faculty/forms">Forms</a>
-            <a class="ghost-link" href="/faculty/problems">Problems</a>
-            <a class="ghost-link" href="/faculty/evaluation">Evaluation</a>
-            <a class="ghost-link" href="/faculty/teams">Teams</a>
-            <a class="ghost-link" href="/leaderboard">Leaderboard</a>
-            <a class="ghost-link" href="/faculty/deployment">Deployment</a>
+        <div class="header-actions faculty-nav simple-nav">
+            <a class="ghost-link" href="/faculty">Organiser Home</a>
             <button class="danger-btn" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -35,7 +28,7 @@
     <p id="facultyMessage" class="status-banner"></p>
 
     <section class="simple-shell">
-        <h2>Faculty Modules</h2>
+        <h2>Organiser Modules</h2>
         <div class="card-grid top-gap faculty-hub-grid">
             <a class="card hub-card" href="/faculty/events">
                 <h3>Events</h3>
@@ -46,12 +39,12 @@
                 <p>Design registration fields without editing JSON.</p>
             </a>
             <a class="card hub-card" href="/faculty/problems">
-                <h3>Problems & Criteria</h3>
-                <p>Create/release problem statements and evaluation criteria.</p>
+                <h3>Problems</h3>
+                <p>Create and release problem statements.</p>
             </a>
             <a class="card hub-card" href="/faculty/evaluation">
-                <h3>Evaluation</h3>
-                <p>Search teams and submit criterion-based scores.</p>
+                <h3>Evaluation & Criteria</h3>
+                <p>Define criteria, search teams, and submit scores.</p>
             </a>
             <a class="card hub-card" href="/faculty/teams">
                 <h3>Teams & Payments</h3>
@@ -84,6 +77,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/faculty.js?v=ready_v7"></script>
+<script src="/js/faculty.js?v=ready_v12"></script>
 </body>
 </html>

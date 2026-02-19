@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Faculty Teams and Payments</title>
+    <title>Organiser Teams and Payments</title>
     <link rel="stylesheet" href="/css/styles.css?v=device_v1">
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=h3">
     <link rel="icon" type="image/png" sizes="32x32" href="/img/h-logo-32.png?v=h3">
@@ -15,19 +15,12 @@
 <div class="container">
     <header class="dashboard-header">
         <div>
-            <p class="eyebrow">Faculty Console</p>
+            <p class="eyebrow">Organiser Console</p>
             <h1 class="page-title">Teams and Payment Status</h1>
             <p class="page-subtitle">Track registrations, payment results, and problem-statement selection counts.</p>
         </div>
-        <div class="header-actions faculty-nav">
-            <a class="ghost-link" href="/faculty">Overview</a>
-            <a class="ghost-link" href="/faculty/events">Events</a>
-            <a class="ghost-link" href="/faculty/forms">Forms</a>
-            <a class="ghost-link" href="/faculty/problems">Problems</a>
-            <a class="ghost-link" href="/faculty/evaluation">Evaluation</a>
-            <a class="ghost-link active-nav" href="/faculty/teams">Teams</a>
-            <a class="ghost-link" href="/leaderboard">Leaderboard</a>
-            <a class="ghost-link" href="/faculty/deployment">Deployment</a>
+        <div class="header-actions faculty-nav simple-nav">
+            <a class="ghost-link" href="/faculty">Organiser Home</a>
             <button class="danger-btn" onclick="logout()">Logout</button>
         </div>
     </header>
@@ -36,10 +29,13 @@
 
     <section class="simple-shell">
         <div class="section-title-row">
-            <h2>Quick Event Picker</h2>
-            <button onclick="loadFacultyEvents()">Refresh Events</button>
+            <h2>Select Event</h2>
+            <button type="button" onclick="loadFacultyEvents()">Refresh Events</button>
         </div>
-        <div id="facultyEventCards" class="event-cards"></div>
+        <label>Active Event
+            <select id="globalEventSelect"></select>
+        </label>
+        <p id="globalEventHint" class="muted top-gap"></p>
     </section>
 
     <section class="simple-shell top-gap">
@@ -48,8 +44,8 @@
             <button class="ghost-btn" onclick="loadTeamsByEvent()" type="button">Load Teams</button>
         </div>
 
-        <label>Event ID
-            <input id="teamsEventId" class="event-id-input" placeholder="Event ID">
+        <label>Selected Event ID
+            <input id="teamsEventId" class="event-id-input" placeholder="Auto-selected from the event picker" readonly>
         </label>
         <div class="section-title-row top-gap">
             <h3>Export Reports</h3>
@@ -89,6 +85,6 @@
 </div>
 
 <script src="/js/common.js"></script>
-<script src="/js/faculty.js?v=ready_v7"></script>
+<script src="/js/faculty.js?v=ready_v12"></script>
 </body>
 </html>

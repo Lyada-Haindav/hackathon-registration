@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .exceptionHandling(ex -> ex.authenticationEntryPoint(authenticationEntryPoint))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/", "/login", "/faculty-login", "/faculty-register", "/register", "/faculty/**", "/user", "/problem-statements", "/leaderboard", "/top-teams", "/js/**", "/css/**", "/img/**", "/favicon.ico").permitAll()
+                        .requestMatchers("/api/public/**").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/faculty/**").hasRole("FACULTY")
                         .requestMatchers("/api/user/**").hasAnyRole("USER", "FACULTY")

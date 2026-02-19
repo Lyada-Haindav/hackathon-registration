@@ -1,10 +1,15 @@
 if (!ensureRole("FACULTY")) {
-    throw new Error("Faculty role required");
+    throw new Error("Organiser role required");
 }
+
+const SELECTED_EVENT_STORAGE_KEY = "selectedFacultyEventId";
 
 const state = {
     events: [],
-    selectedEventId: null,
+    selectedEventId: (() => {
+        const saved = String(localStorage.getItem(SELECTED_EVENT_STORAGE_KEY) || "").trim();
+        return saved || null;
+    })(),
     loadedCriteria: [],
     loadedProblems: [],
     loadedEvaluationTeams: [],
@@ -56,16 +61,101 @@ function closeFacultyPopup() {
     overlay.classList.remove("error");
 }
 
-function syncEventInputs(eventId) {
-    if (!eventId) {
+function getEventById(eventId) {
+    const id = String(eventId || "").trim();
+    if (!id) {
+        return null;
+    }
+    return state.events.find((event) => event.id === id) || null;
+}
+
+function updateGlobalEventHint() {
+    const hint = getById("globalEventHint");
+    if (!hint) {
         return;
     }
 
-    state.selectedEventId = eventId;
+    const selected = getEventById(state.selectedEventId);
+    if (!selected) {
+        hint.textContent = "No event selected. Create or refresh events to continue.";
+        return;
+    }
+
+    const registrationState = selected.registrationOpen ? "Registration Open" : "Registration Closed";
+    hint.textContent = `Selected: ${selected.title} (${selected.id}) • ${registrationState}`;
+}
+
+function clearSelectedEvent() {
+    state.selectedEventId = null;
+    localStorage.removeItem(SELECTED_EVENT_STORAGE_KEY);
+
     document.querySelectorAll(".event-id-input").forEach((input) => {
-        input.value = eventId;
+        input.value = "";
     });
-    setFacultyMessage(`Selected event: ${eventId}`);
+
+    const select = getById("globalEventSelect");
+    if (select) {
+        select.value = "";
+    }
+
+    updateGlobalEventHint();
+}
+
+function syncEventInputs(eventId, options = {}) {
+    const id = String(eventId || "").trim();
+    if (!id) {
+        return;
+    }
+
+    const announce = options.announce !== false;
+    state.selectedEventId = id;
+    localStorage.setItem(SELECTED_EVENT_STORAGE_KEY, id);
+
+    document.querySelectorAll(".event-id-input").forEach((input) => {
+        input.value = id;
+    });
+
+    const select = getById("globalEventSelect");
+    if (select) {
+        select.value = id;
+    }
+
+    updateGlobalEventHint();
+
+    if (announce) {
+        const selected = getEventById(id);
+        setFacultyMessage(selected ? `Selected event: ${selected.title}` : `Selected event: ${id}`);
+    }
+}
+
+function renderGlobalEventSelector(events = []) {
+    const select = getById("globalEventSelect");
+    if (!select) {
+        return;
+    }
+
+    const allEvents = Array.isArray(events) ? events : [];
+    select.innerHTML = "";
+
+    if (!allEvents.length) {
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "No events available";
+        select.appendChild(emptyOption);
+        clearSelectedEvent();
+        return;
+    }
+
+    allEvents.forEach((event) => {
+        const option = document.createElement("option");
+        option.value = event.id;
+        option.textContent = `${event.title} (${event.id})`;
+        select.appendChild(option);
+    });
+
+    const selectedExists = Boolean(state.selectedEventId && allEvents.some((event) => event.id === state.selectedEventId));
+    const nextEventId = selectedExists ? state.selectedEventId : allEvents[0].id;
+    syncEventInputs(nextEventId, { announce: false });
 }
 
 function getPreferredEventId(fallbackSelector = ".event-id-input") {
@@ -439,6 +529,7 @@ async function setLeaderboardVisibility(eventId, visible) {
 
         state.events = state.events.map((event) => (event.id === eventId ? updated : event));
         renderFacultyEvents(state.events);
+        renderGlobalEventSelector(state.events);
         setFacultyMessage(
             visible
                 ? "Leaderboard is now visible to users for this event."
@@ -454,6 +545,7 @@ async function holdEvent(eventId) {
         const updated = await apiFetch(`/api/faculty/events/${eventId}/hold`, { method: "PUT" });
         state.events = state.events.map((event) => (event.id === eventId ? updated : event));
         renderFacultyEvents(state.events);
+        renderGlobalEventSelector(state.events);
         setFacultyMessage("Event is now on hold. Users cannot register for it.");
     } catch (error) {
         setFacultyMessage(error.message, true);
@@ -465,6 +557,7 @@ async function resumeEvent(eventId) {
         const updated = await apiFetch(`/api/faculty/events/${eventId}/resume`, { method: "PUT" });
         state.events = state.events.map((event) => (event.id === eventId ? updated : event));
         renderFacultyEvents(state.events);
+        renderGlobalEventSelector(state.events);
         setFacultyMessage("Event resumed and is now active.");
     } catch (error) {
         setFacultyMessage(error.message, true);
@@ -477,6 +570,7 @@ async function setRegistrationOpen(eventId, open) {
         const updated = await apiFetch(`/api/faculty/events/${eventId}/${action}`, { method: "PUT" });
         state.events = state.events.map((event) => (event.id === eventId ? updated : event));
         renderFacultyEvents(state.events);
+        renderGlobalEventSelector(state.events);
         setFacultyMessage(open ? "Registration opened for this event." : "Registration closed for this event.");
     } catch (error) {
         setFacultyMessage(error.message, true);
@@ -493,14 +587,11 @@ async function deleteEvent(eventId, title) {
         await apiFetch(`/api/faculty/events/${eventId}`, { method: "DELETE" });
 
         state.events = state.events.filter((event) => event.id !== eventId);
-        if (state.selectedEventId === eventId) {
-            state.selectedEventId = null;
-            document.querySelectorAll(".event-id-input").forEach((input) => {
-                input.value = "";
-            });
-        }
-
         renderFacultyEvents(state.events);
+        renderGlobalEventSelector(state.events);
+        if (state.events.length === 0) {
+            clearSelectedEvent();
+        }
         setFacultyMessage("Event deleted successfully.");
     } catch (error) {
         setFacultyMessage(error.message, true);
@@ -825,18 +916,123 @@ async function loadProblemSelectionCounts() {
 async function loadFacultyEvents() {
     try {
         const events = await apiFetch("/api/faculty/events");
-        state.events = events;
-        renderFacultyEvents(events);
+        state.events = Array.isArray(events) ? events : [];
+        renderFacultyEvents(state.events);
+        renderGlobalEventSelector(state.events);
     } catch (error) {
         setFacultyMessage(error.message, true);
     }
 }
 
+const EVENT_POSTER_MAX_BYTES = 2 * 1024 * 1024;
+const ALLOWED_POSTER_TYPES = new Set([
+    "image/png",
+    "image/jpeg",
+    "image/jpg",
+    "image/webp",
+    "image/gif"
+]);
+
+function resetEventPosterPreview() {
+    const dataInput = getById("eventPosterData");
+    const previewWrap = getById("eventPosterPreviewWrap");
+    const preview = getById("eventPosterPreview");
+    const fileInput = getById("eventPosterFile");
+
+    if (dataInput) {
+        dataInput.value = "";
+    }
+    if (preview) {
+        preview.removeAttribute("src");
+    }
+    if (previewWrap) {
+        previewWrap.classList.add("hidden");
+    }
+    if (fileInput) {
+        fileInput.value = "";
+    }
+}
+
+function readPosterAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = () => reject(new Error("Unable to read poster image."));
+        reader.readAsDataURL(file);
+    });
+}
+
+async function applyPosterFile(file) {
+    if (!file) {
+        resetEventPosterPreview();
+        return "";
+    }
+
+    if (!ALLOWED_POSTER_TYPES.has(String(file.type || "").toLowerCase())) {
+        throw new Error("Upload PNG, JPG, WEBP, or GIF poster only.");
+    }
+
+    if (file.size > EVENT_POSTER_MAX_BYTES) {
+        throw new Error("Poster image must be 2MB or smaller.");
+    }
+
+    const dataUrl = await readPosterAsDataUrl(file);
+    const dataInput = getById("eventPosterData");
+    const previewWrap = getById("eventPosterPreviewWrap");
+    const preview = getById("eventPosterPreview");
+
+    if (dataInput) {
+        dataInput.value = dataUrl;
+    }
+    if (preview) {
+        preview.src = dataUrl;
+    }
+    if (previewWrap) {
+        previewWrap.classList.remove("hidden");
+    }
+
+    return dataUrl;
+}
+
 if (eventForm) {
+    const posterFileInput = getById("eventPosterFile");
+    const posterClearButton = getById("eventPosterClearBtn");
+    const posterDataInput = getById("eventPosterData");
+
+    if (posterFileInput) {
+        posterFileInput.addEventListener("change", async () => {
+            const file = posterFileInput.files && posterFileInput.files[0] ? posterFileInput.files[0] : null;
+            try {
+                await applyPosterFile(file);
+            } catch (error) {
+                setFacultyMessage(error.message, true);
+                resetEventPosterPreview();
+            }
+        });
+    }
+
+    if (posterClearButton) {
+        posterClearButton.addEventListener("click", () => {
+            resetEventPosterPreview();
+            setFacultyMessage("Poster removed.");
+        });
+    }
+
     eventForm.addEventListener("submit", async (event) => {
         event.preventDefault();
 
+        const posterFile = posterFileInput && posterFileInput.files && posterFileInput.files[0] ? posterFileInput.files[0] : null;
+        if (posterFile && posterDataInput && !String(posterDataInput.value || "").trim()) {
+            try {
+                await applyPosterFile(posterFile);
+            } catch (error) {
+                setFacultyMessage(error.message, true);
+                return;
+            }
+        }
+
         const fd = new FormData(eventForm);
+
         const startDate = String(fd.get("startDate") || "").trim();
         const endDate = String(fd.get("endDate") || "").trim();
         let registrationOpenDate = String(fd.get("registrationOpenDate") || "").trim();
@@ -856,6 +1052,8 @@ if (eventForm) {
         const body = {
             title: fd.get("title"),
             description: fd.get("description"),
+            aboutEvent: fd.get("aboutEvent"),
+            posterUrl: fd.get("posterUrl"),
             startDate,
             endDate,
             registrationOpenDate,
@@ -868,6 +1066,7 @@ if (eventForm) {
             const response = await apiFetch("/api/faculty/events", { method: "POST", body });
             setFacultyMessage(`Event created successfully. Event ID: ${response.id}`);
             eventForm.reset();
+            resetEventPosterPreview();
             syncEventInputs(response.id);
             loadFacultyEvents();
         } catch (error) {
@@ -884,7 +1083,7 @@ if (dynamicFormBuilder) {
             const formData = new FormData(dynamicFormBuilder);
             const eventId = String(formData.get("eventId") || "").trim();
             if (!eventId) {
-                throw new Error("Event ID is required.");
+                throw new Error("Select an event first.");
             }
 
             const fields = collectFormFields();
@@ -906,7 +1105,7 @@ async function loadExistingForm() {
 
     const eventId = String(dynamicFormBuilder.querySelector("[name='eventId']")?.value || "").trim();
     if (!eventId) {
-        setFacultyMessage("Enter event ID to load existing form.", true);
+        setFacultyMessage("Select an event first.", true);
         return;
     }
 
@@ -965,10 +1164,17 @@ async function loadProblemsForEvent() {
     }
 
     try {
-        const problems = await apiFetch(`/api/faculty/problem-statements/${eventId}`);
+        const [problems, teams] = await Promise.all([
+            apiFetch(`/api/faculty/problem-statements/${eventId}`),
+            apiFetch(`/api/faculty/events/${eventId}/teams`)
+        ]);
+
+        state.loadedStatusTeams = teams;
+        state.loadedEvaluationTeams = teams;
         state.loadedProblems = problems;
+
         renderProblemCards(problems);
-        renderProblemSelectionCounts(state.loadedStatusTeams, problems);
+        renderProblemSelectionCounts(teams, problems);
     } catch (error) {
         setFacultyMessage(error.message, true);
     }
@@ -1044,7 +1250,7 @@ async function prepareEvaluation(preferredTeamId = "") {
     const eventId = String(eventIdInput.value || "").trim() || getPreferredEventId("#evaluationForm [name='eventId']");
 
     if (!eventId) {
-        setFacultyMessage("Enter event ID in Evaluate Team section.", true);
+        setFacultyMessage("Select an event first.", true);
         return;
     }
 
@@ -1088,7 +1294,7 @@ if (evaluationForm) {
         const description = String(fd.get("description") || "").trim();
 
         if (!eventId || !teamId) {
-            setFacultyMessage("Event ID and team selection are required.", true);
+            setFacultyMessage("Event and team selection are required.", true);
             return;
         }
 
@@ -1191,20 +1397,35 @@ function prefillEvaluationFromQuery() {
     prepareEvaluation(teamId);
 }
 
-setFacultyMessage(`Logged in as ${localStorage.getItem("email") || "faculty"}`);
+setFacultyMessage(`Logged in as ${localStorage.getItem("email") || "organiser"}`);
 initializeEventFormDefaults();
+if (state.selectedEventId) {
+    syncEventInputs(state.selectedEventId, { announce: false });
+}
 
 if (getById("formFieldRows") && document.querySelectorAll("#formFieldRows .field-builder-row").length === 0) {
     addFieldRow({ key: "teamIdea", label: "Team Idea", type: "TEXTAREA", required: true, options: [] });
     addFieldRow({ key: "contactPhone", label: "Contact Phone", type: "PHONE", required: true, options: [] });
 }
 
-if (getById("facultyEventCards")) {
+if (getById("facultyEventCards") || getById("globalEventSelect")) {
     loadFacultyEvents();
 }
 
 if (getById("deploymentChecks")) {
     loadDeploymentReadiness();
+}
+
+const globalEventSelect = getById("globalEventSelect");
+if (globalEventSelect) {
+    globalEventSelect.addEventListener("change", () => {
+        const eventId = String(globalEventSelect.value || "").trim();
+        if (!eventId) {
+            clearSelectedEvent();
+            return;
+        }
+        syncEventInputs(eventId);
+    });
 }
 
 const evaluationTeamSearchInput = getById("evaluationTeamSearch");

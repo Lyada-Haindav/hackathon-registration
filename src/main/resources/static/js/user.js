@@ -648,7 +648,7 @@ function openRazorpayCheckout(order) {
         key: order.keyId,
         amount: Math.round(Number(order.amount) * 100),
         currency: order.currency,
-        name: "Hackathon Registration",
+        name: "KLH hackathon registration",
         description: "Team Registration Fee",
         order_id: order.orderId,
         handler: async function (response) {
