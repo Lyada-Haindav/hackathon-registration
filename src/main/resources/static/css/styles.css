@@ -307,6 +307,17 @@ label {
     font-weight: 600;
 }
 
+.auth-helper-links {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.auth-helper-links .ghost-link {
+    flex: 1;
+    text-align: center;
+}
+
 .field-builder-row {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1116,6 +1127,10 @@ body.auth-page .organizer-access-grid .card:hover {
     .home-header {
         flex-direction: column;
         align-items: flex-start;
+    }
+
+    .auth-helper-links {
+        flex-direction: column;
     }
 }
 

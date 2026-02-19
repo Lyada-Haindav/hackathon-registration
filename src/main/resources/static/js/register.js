@@ -21,7 +21,9 @@ registerForm.addEventListener("submit", async (event) => {
 
         if (response.emailVerificationRequired) {
             setSession(null);
-            messageEl.textContent = response.message || "Verification email sent. Please verify your email before login.";
+            const verifyMessage = response.message || "Verification email sent. Please verify your email before login.";
+            messageEl.textContent = verifyMessage;
+            alert("Confirm your mail to continue.\n\n" + verifyMessage);
             registerForm.reset();
             setTimeout(() => {
                 window.location.href = "/login";
