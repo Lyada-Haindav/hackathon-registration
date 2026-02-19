@@ -293,7 +293,8 @@ public class AuthService {
         try {
             emailService.sendVerificationEmail(user, token);
         } catch (RuntimeException ex) {
-            throw new BadRequestException("Unable to send verification email. Check SMTP credentials and verified sender.");
+            throw new BadRequestException("Unable to send verification email. "
+                    + buildEmailTroubleshootingMessage(ex));
         }
     }
 
@@ -307,7 +308,8 @@ public class AuthService {
             } catch (Exception ignored) {
                 // best effort cleanup for failed email deliveries
             }
-            throw new BadRequestException("Unable to send password reset email. Check SMTP credentials and verified sender.");
+            throw new BadRequestException("Unable to send password reset email. "
+                    + buildEmailTroubleshootingMessage(ex));
         }
     }
 
@@ -315,5 +317,16 @@ public class AuthService {
         if (!emailService.isEnabled()) {
             throw new BadRequestException("Email service is not configured. Set EMAIL_ENABLED and SMTP settings.");
         }
+    }
+
+    private String buildEmailTroubleshootingMessage(RuntimeException ex) {
+        String details = ex.getMessage();
+        if (details == null || details.isBlank()) {
+            details = "Unknown SMTP error";
+        }
+        if (details.length() > 220) {
+            details = details.substring(0, 220) + "...";
+        }
+        return "Check SMTP credentials, EMAIL_FROM (verified sender in Brevo), and APP_BASE_URL. Details: " + details;
     }
 }

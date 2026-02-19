@@ -19,15 +19,18 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final boolean emailEnabled;
     private final String fromEmail;
+    private final String smtpUsername;
     private final String baseUrl;
 
     public EmailService(JavaMailSender mailSender,
                         @Value("${app.email.enabled:false}") boolean emailEnabled,
                         @Value("${app.email.from:no-reply@hackathon.local}") String fromEmail,
+                        @Value("${spring.mail.username:}") String smtpUsername,
                         @Value("${app.web.base-url:http://localhost:8080}") String baseUrl) {
         this.mailSender = mailSender;
         this.emailEnabled = emailEnabled;
         this.fromEmail = fromEmail;
+        this.smtpUsername = smtpUsername;
         this.baseUrl = baseUrl;
     }
 
@@ -66,15 +69,72 @@ public class EmailService {
             return;
         }
 
+        String primaryFrom = selectPrimaryFromAddress();
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromEmail);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
-            mailSender.send(message);
-        } catch (Exception ex) {
-            throw new RuntimeException("Unable to send email: " + ex.getMessage(), ex);
+            sendMessage(primaryFrom, to, subject, body);
+        } catch (Exception primaryEx) {
+            String fallbackFrom = selectFallbackFromAddress(primaryFrom);
+            if (fallbackFrom != null) {
+                try {
+                    sendMessage(fallbackFrom, to, subject, body);
+                    log.warn("Primary EMAIL_FROM '{}' failed. Email delivered using SMTP login sender '{}'.", primaryFrom, fallbackFrom);
+                    return;
+                } catch (Exception fallbackEx) {
+                    throw new RuntimeException(
+                            "SMTP delivery failed. primaryFrom='" + primaryFrom + "', fallbackFrom='" + fallbackFrom + "'. "
+                                    + extractRootMessage(fallbackEx),
+                            fallbackEx
+                    );
+                }
+            }
+            throw new RuntimeException(
+                    "SMTP delivery failed. from='" + primaryFrom + "'. " + extractRootMessage(primaryEx),
+                    primaryEx
+            );
         }
+    }
+
+    private void sendMessage(String from, String to, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        if (from != null && !from.isBlank()) {
+            message.setFrom(from.trim());
+        }
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+        mailSender.send(message);
+    }
+
+    private String selectPrimaryFromAddress() {
+        if (fromEmail != null && !fromEmail.isBlank()) {
+            return fromEmail.trim();
+        }
+        if (smtpUsername != null && !smtpUsername.isBlank()) {
+            return smtpUsername.trim();
+        }
+        return null;
+    }
+
+    private String selectFallbackFromAddress(String primaryFrom) {
+        if (smtpUsername == null || smtpUsername.isBlank()) {
+            return null;
+        }
+        String fallback = smtpUsername.trim();
+        if (primaryFrom == null || primaryFrom.isBlank()) {
+            return null;
+        }
+        return fallback.equalsIgnoreCase(primaryFrom.trim()) ? null : fallback;
+    }
+
+    private String extractRootMessage(Throwable throwable) {
+        Throwable cursor = throwable;
+        while (cursor.getCause() != null && cursor.getCause() != cursor) {
+            cursor = cursor.getCause();
+        }
+        String message = cursor.getMessage();
+        if (message == null || message.isBlank()) {
+            message = throwable.getMessage();
+        }
+        return message == null || message.isBlank() ? "Unknown SMTP error" : message;
     }
 }

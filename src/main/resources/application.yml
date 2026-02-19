@@ -44,7 +44,7 @@ app:
     password-reset-ttl-minutes: ${PASSWORD_RESET_TTL_MINUTES:30}
   email:
     enabled: ${EMAIL_ENABLED:false}
-    from: ${EMAIL_FROM:no-reply@hackathonregister123.com}
+    from: ${EMAIL_FROM:${SMTP_USERNAME:no-reply@hackathonregister123.com}}
   web:
     base-url: ${APP_BASE_URL:http://localhost:8080}
 
