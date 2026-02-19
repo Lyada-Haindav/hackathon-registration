@@ -14,6 +14,9 @@ spring:
       mail:
         smtp:
           auth: ${SMTP_AUTH:true}
+          connectiontimeout: ${SMTP_CONNECTION_TIMEOUT:5000}
+          timeout: ${SMTP_TIMEOUT:5000}
+          writetimeout: ${SMTP_WRITE_TIMEOUT:5000}
           starttls:
             enable: ${SMTP_STARTTLS_ENABLE:true}
   jackson:

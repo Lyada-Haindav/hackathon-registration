@@ -193,8 +193,7 @@ public class AuthService {
         }
 
         ensureEmailServiceEnabled();
-        String token = authTokenService.createToken(user, AuthTokenType.PASSWORD_RESET, passwordResetTtlMinutes);
-        emailService.sendPasswordResetEmail(user, token);
+        sendPasswordResetMail(user);
         return new MessageResponse("If this email is registered, a password reset link has been sent.");
     }
 
@@ -215,6 +214,23 @@ public class AuthService {
     private AuthResponse registerWithRole(RegisterRequest request, Role role) {
         String normalizedEmail = userService.normalizeEmail(request.email());
         if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+            User existing = userService.findByEmail(normalizedEmail);
+            if (role == Role.USER
+                    && existing.getRole() == Role.USER
+                    && !existing.isEmailVerified()
+                    && userEmailVerificationRequired
+                    && emailService.isEnabled()) {
+                sendVerificationMail(existing);
+                return new AuthResponse(
+                        null,
+                        existing.getId(),
+                        existing.getName(),
+                        existing.getEmail(),
+                        existing.getRole().name(),
+                        true,
+                        "Email already registered but not verified. New verification link sent."
+                );
+            }
             throw new BadRequestException("Email is already registered");
         }
 
@@ -237,7 +253,12 @@ public class AuthService {
         }
 
         if (saved.getRole() == Role.USER && !saved.isEmailVerified()) {
-            sendVerificationMail(saved);
+            try {
+                sendVerificationMail(saved);
+            } catch (BadRequestException ex) {
+                userRepository.deleteById(saved.getId());
+                throw ex;
+            }
             return new AuthResponse(
                     null,
                     saved.getId(),
@@ -267,7 +288,25 @@ public class AuthService {
 
     private void sendVerificationMail(User user) {
         String token = authTokenService.createToken(user, AuthTokenType.EMAIL_VERIFICATION, emailVerificationTtlMinutes);
-        emailService.sendVerificationEmail(user, token);
+        try {
+            emailService.sendVerificationEmail(user, token);
+        } catch (RuntimeException ex) {
+            throw new BadRequestException("Unable to send verification email. Check SMTP credentials and verified sender.");
+        }
+    }
+
+    private void sendPasswordResetMail(User user) {
+        String token = authTokenService.createToken(user, AuthTokenType.PASSWORD_RESET, passwordResetTtlMinutes);
+        try {
+            emailService.sendPasswordResetEmail(user, token);
+        } catch (RuntimeException ex) {
+            try {
+                authTokenService.consumeToken(token, AuthTokenType.PASSWORD_RESET);
+            } catch (Exception ignored) {
+                // best effort cleanup for failed email deliveries
+            }
+            throw new BadRequestException("Unable to send password reset email. Check SMTP credentials and verified sender.");
+        }
     }
 
     private void ensureEmailServiceEnabled() {
