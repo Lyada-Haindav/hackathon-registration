@@ -126,7 +126,7 @@ public class AuthService {
 
     public User ensureFacultyUser(String name, String email, String rawPassword) {
         String normalizedEmail = userService.normalizeEmail(email);
-        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+        if (userRepository.existsByEmail(normalizedEmail)) {
             return userService.findByEmail(normalizedEmail);
         }
 
@@ -217,7 +217,7 @@ public class AuthService {
             ensureEmailServiceEnabled();
         }
 
-        if (userRepository.existsByEmailIgnoreCase(normalizedEmail)) {
+        if (userRepository.existsByEmail(normalizedEmail)) {
             User existing = userService.findByEmail(normalizedEmail);
             if (role == Role.USER
                     && existing.getRole() == Role.USER

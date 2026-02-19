@@ -41,6 +41,11 @@ public class UserService {
 
     public User findByEmail(String email) {
         String normalizedEmail = normalizeEmail(email);
+        return userRepository.findByEmail(normalizedEmail)
+                .orElseGet(() -> findByEmailFallbackIgnoreCase(normalizedEmail));
+    }
+
+    private User findByEmailFallbackIgnoreCase(String normalizedEmail) {
         List<User> candidates = userRepository.findAllByEmailIgnoreCase(normalizedEmail);
         if (candidates.isEmpty()) {
             throw new ResourceNotFoundException("User not found for email: " + normalizedEmail);

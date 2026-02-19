@@ -16,12 +16,14 @@ public class Payment {
     @Indexed
     private String teamId;
 
+    @Indexed
     private String eventId;
 
     private BigDecimal amount;
 
     private String currency = "INR";
 
+    @Indexed(unique = true)
     private String razorpayOrderId;
 
     private String razorpayPaymentId;

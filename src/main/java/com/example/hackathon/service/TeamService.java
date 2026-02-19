@@ -22,7 +22,10 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class TeamService {
@@ -63,14 +66,9 @@ public class TeamService {
         HackathonEvent event = eventService.getEventEntity(request.eventId());
         eventService.validateRegistrationWindow(event);
 
-        if (!teamRepository.findByUserId(user.getId()).isEmpty()) {
+        if (teamRepository.existsByUserId(user.getId())) {
             throw new BadRequestException("User can register only one team in the system");
         }
-
-        teamRepository.findByEventIdAndUserId(request.eventId(), user.getId())
-                .ifPresent(team -> {
-                    throw new BadRequestException("Team already registered for this event");
-                });
 
         validateMembers(request.members());
         formService.validateFormResponse(request.eventId(), request.formResponses());
@@ -98,12 +96,14 @@ public class TeamService {
 
     public List<TeamResponse> getUserTeams(String userEmail) {
         User user = userService.findByEmail(userEmail);
-        return teamRepository.findByUserId(user.getId()).stream().map(this::toTeamResponse).toList();
+        List<Team> teams = teamRepository.findByUserId(user.getId());
+        return toTeamResponses(teams);
     }
 
     public List<TeamResponse> getTeamsByEvent(String eventId) {
         eventService.getEventEntity(eventId);
-        return teamRepository.findByEventId(eventId).stream().map(this::toTeamResponse).toList();
+        List<Team> teams = teamRepository.findByEventId(eventId);
+        return toTeamResponses(teams);
     }
 
     public Team getTeamEntity(String teamId) {
@@ -175,6 +175,43 @@ public class TeamService {
                 members,
                 team.getFormResponses()
         );
+    }
+
+    private List<TeamResponse> toTeamResponses(List<Team> teams) {
+        if (teams == null || teams.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> teamIds = teams.stream().map(Team::getId).toList();
+        Map<String, List<TeamMemberResponse>> membersByTeamId = new HashMap<>();
+
+        for (TeamMember member : teamMemberRepository.findByTeamIdIn(teamIds)) {
+            List<TeamMemberResponse> teamMembers = membersByTeamId.computeIfAbsent(member.getTeamId(), key -> new ArrayList<>());
+            teamMembers.add(new TeamMemberResponse(
+                    member.getId(),
+                    member.getName(),
+                    member.getEmail(),
+                    member.getPhone(),
+                    member.getCollege(),
+                    member.isLeader()
+            ));
+        }
+
+        return teams.stream()
+                .map(team -> new TeamResponse(
+                        team.getId(),
+                        team.getEventId(),
+                        team.getTeamName(),
+                        team.getTeamSize(),
+                        team.getPaymentStatus(),
+                        team.getTotalScore(),
+                        team.getRazorpayOrderId(),
+                        team.getSelectedProblemStatementId(),
+                        team.getSelectedProblemStatementTitle(),
+                        membersByTeamId.getOrDefault(team.getId(), List.of()),
+                        team.getFormResponses()
+                ))
+                .toList();
     }
 
     private TeamMember toEntity(TeamMemberRequest memberRequest, String teamId) {
