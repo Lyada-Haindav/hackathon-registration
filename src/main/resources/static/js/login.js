@@ -22,6 +22,9 @@ loginForm.addEventListener("submit", async (event) => {
         window.location.href = response.role === "FACULTY" ? "/organizer/dashboard" : "/user";
     } catch (error) {
         messageEl.textContent = error.message;
+        if ((error.message || "").toLowerCase().includes("verify your email")) {
+            alert("Verify your email before login.");
+        }
     } finally {
         submitButton.disabled = false;
     }

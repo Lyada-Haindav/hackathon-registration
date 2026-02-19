@@ -3,7 +3,6 @@ package com.example.hackathon.security;
 import com.example.hackathon.model.User;
 import com.example.hackathon.model.Role;
 import com.example.hackathon.service.UserService;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -16,12 +15,9 @@ import java.util.List;
 public class CustomUserDetailsService implements UserDetailsService {
 
     private final UserService userService;
-    private final boolean userEmailVerificationRequired;
 
-    public CustomUserDetailsService(UserService userService,
-                                    @Value("${app.auth.user-email-verification-required:true}") boolean userEmailVerificationRequired) {
+    public CustomUserDetailsService(UserService userService) {
         this.userService = userService;
-        this.userEmailVerificationRequired = userEmailVerificationRequired;
     }
 
     @Override
@@ -33,12 +29,10 @@ public class CustomUserDetailsService implements UserDetailsService {
             throw new UsernameNotFoundException("User not found");
         }
 
-        boolean verificationGateEnabled = userEmailVerificationRequired;
-
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPassword(),
-                user.isActive() && (user.getRole() == Role.FACULTY || !verificationGateEnabled || user.isEmailVerified()),
+                user.isActive() && (user.getRole() == Role.FACULTY || user.isEmailVerified()),
                 true,
                 true,
                 true,
