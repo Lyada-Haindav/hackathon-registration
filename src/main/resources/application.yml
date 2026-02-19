@@ -45,6 +45,9 @@ app:
   email:
     enabled: ${EMAIL_ENABLED:false}
     from: ${EMAIL_FROM:${SMTP_USERNAME:no-reply@hackathonregister123.com}}
+    brevo:
+      api-key: ${BREVO_API_KEY:}
+      api-url: ${BREVO_API_URL:https://api.brevo.com/v3/smtp/email}
   web:
     base-url: ${APP_BASE_URL:http://localhost:8080}
 

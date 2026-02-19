@@ -327,6 +327,6 @@ public class AuthService {
         if (details.length() > 220) {
             details = details.substring(0, 220) + "...";
         }
-        return "Check SMTP credentials, EMAIL_FROM (verified sender in Brevo), and APP_BASE_URL. Details: " + details;
+        return "Check SMTP credentials, EMAIL_FROM (verified sender in Brevo), APP_BASE_URL, or set BREVO_API_KEY for HTTPS fallback. Details: " + details;
     }
 }
