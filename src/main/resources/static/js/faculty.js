@@ -1054,6 +1054,7 @@ if (eventForm) {
             description: fd.get("description"),
             aboutEvent: fd.get("aboutEvent"),
             posterUrl: fd.get("posterUrl"),
+            telegramGroupLink: fd.get("telegramGroupLink"),
             startDate,
             endDate,
             registrationOpenDate,

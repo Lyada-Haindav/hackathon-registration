@@ -13,6 +13,7 @@ public record CreateEventRequest(
         @NotBlank String description,
         @Size(max = 2500) String aboutEvent,
         @Size(max = 3500000) String posterUrl,
+        @Size(max = 600) String telegramGroupLink,
         @NotNull LocalDate startDate,
         @NotNull LocalDate endDate,
         @NotNull LocalDate registrationOpenDate,

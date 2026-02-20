@@ -9,6 +9,7 @@ public record EventResponse(
         String description,
         String aboutEvent,
         String posterUrl,
+        String telegramGroupLink,
         LocalDate startDate,
         LocalDate endDate,
         LocalDate registrationOpenDate,

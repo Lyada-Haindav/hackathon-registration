@@ -67,6 +67,7 @@ public class EventService {
         event.setDescription(request.description());
         event.setAboutEvent(normalizeText(request.aboutEvent()));
         event.setPosterUrl(normalizeText(request.posterUrl()));
+        event.setTelegramGroupLink(normalizeTelegramLink(request.telegramGroupLink()));
         event.setStartDate(request.startDate());
         event.setEndDate(request.endDate());
         event.setRegistrationOpenDate(request.registrationOpenDate());
@@ -94,6 +95,7 @@ public class EventService {
         event.setDescription(request.description());
         event.setAboutEvent(normalizeText(request.aboutEvent()));
         event.setPosterUrl(normalizeText(request.posterUrl()));
+        event.setTelegramGroupLink(normalizeTelegramLink(request.telegramGroupLink()));
         event.setStartDate(request.startDate());
         event.setEndDate(request.endDate());
         event.setRegistrationOpenDate(request.registrationOpenDate());
@@ -197,6 +199,7 @@ public class EventService {
                 event.getDescription(),
                 event.getAboutEvent(),
                 event.getPosterUrl(),
+                event.getTelegramGroupLink(),
                 event.getStartDate(),
                 event.getEndDate(),
                 event.getRegistrationOpenDate(),
@@ -217,5 +220,19 @@ public class EventService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeTelegramLink(String value) {
+        String normalized = normalizeText(value);
+        if (normalized == null) {
+            return null;
+        }
+        if (normalized.startsWith("https://") || normalized.startsWith("http://")) {
+            return normalized;
+        }
+        if (normalized.startsWith("t.me/") || normalized.startsWith("telegram.me/")) {
+            return "https://" + normalized;
+        }
+        return normalized;
     }
 }

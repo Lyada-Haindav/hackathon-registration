@@ -441,6 +441,59 @@ label {
     margin-bottom: 8px;
 }
 
+.telegram-join-wrap {
+    margin-top: 14px;
+    display: flex;
+    justify-content: center;
+}
+
+.telegram-join-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #ffffff;
+    background: linear-gradient(90deg, #1d9bf0, #0d78c9);
+    border: 1px solid rgba(144, 211, 255, 0.65);
+    border-radius: 999px;
+    padding: 10px 16px;
+    text-decoration: none;
+    font-weight: 700;
+    box-shadow: 0 10px 22px rgba(14, 120, 201, 0.34);
+}
+
+.telegram-join-link:hover {
+    transform: translateY(-1px);
+}
+
+.telegram-icon-pulse {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.16);
+    animation: telegramPulse 1.5s ease-in-out infinite;
+}
+
+.telegram-icon-pulse svg {
+    width: 18px;
+    height: 18px;
+    fill: #ffffff;
+}
+
+@keyframes telegramPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(29, 155, 240, 0.55);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(29, 155, 240, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(29, 155, 240, 0);
+    }
+}
+
 .side-rail {
     display: flex;
     flex-direction: column;

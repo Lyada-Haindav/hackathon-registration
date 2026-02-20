@@ -26,6 +26,8 @@ public class HackathonEvent {
 
     private String posterUrl;
 
+    private String telegramGroupLink;
+
     private LocalDate startDate;
 
     private LocalDate endDate;
@@ -88,6 +90,14 @@ public class HackathonEvent {
 
     public void setPosterUrl(String posterUrl) {
         this.posterUrl = posterUrl;
+    }
+
+    public String getTelegramGroupLink() {
+        return telegramGroupLink;
+    }
+
+    public void setTelegramGroupLink(String telegramGroupLink) {
+        this.telegramGroupLink = telegramGroupLink;
     }
 
     public LocalDate getStartDate() {

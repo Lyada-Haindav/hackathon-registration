@@ -41,6 +41,73 @@ function getPayableFee(event, memberCount) {
     return getPerMemberFee(event) * Math.max(Number(memberCount) || 1, 1);
 }
 
+function getSafeTelegramUrl(rawUrl) {
+    const raw = String(rawUrl || "").trim();
+    if (!raw) {
+        return null;
+    }
+
+    let candidate = raw;
+    if (candidate.startsWith("t.me/") || candidate.startsWith("telegram.me/")) {
+        candidate = `https://${candidate}`;
+    }
+
+    try {
+        const parsed = new URL(candidate);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+            return null;
+        }
+        const host = String(parsed.hostname || "").toLowerCase();
+        if (!host.includes("t.me") && !host.includes("telegram.me")) {
+            return null;
+        }
+        return parsed.toString();
+    } catch (_) {
+        return null;
+    }
+}
+
+function getEventForTeam(team) {
+    if (!team || !team.eventId) {
+        return null;
+    }
+    return state.events.find((event) => event.id === team.eventId) || null;
+}
+
+function renderTelegramJoin(team) {
+    const wrap = document.getElementById("telegramJoinWrap");
+    if (!wrap) {
+        return;
+    }
+
+    const paymentStatus = String(team && team.paymentStatus || "").toUpperCase();
+    if (paymentStatus !== "SUCCESS") {
+        wrap.classList.add("hidden");
+        wrap.innerHTML = "";
+        return;
+    }
+
+    const event = getEventForTeam(team);
+    const telegramUrl = getSafeTelegramUrl(event && event.telegramGroupLink);
+    if (!telegramUrl) {
+        wrap.classList.add("hidden");
+        wrap.innerHTML = "";
+        return;
+    }
+
+    wrap.innerHTML = `
+        <a class="telegram-join-link" href="${telegramUrl}" target="_blank" rel="noopener noreferrer" aria-label="Join Telegram Group">
+            <span class="telegram-icon-pulse" aria-hidden="true">
+                <svg viewBox="0 0 24 24" focusable="false">
+                    <path d="M9.2 15.7l-.4 5.4c.6 0 .9-.3 1.3-.6l3.1-3 6.4 4.7c1.2.7 2 .3 2.3-1.1l4.2-19.6h0c.4-1.7-.6-2.4-1.7-2L.5 9.7c-1.6.6-1.6 1.5-.3 1.9l6.1 1.9L20.7 4c.7-.4 1.4-.2.8.4"/>
+                </svg>
+            </span>
+            <span>Join Telegram Group</span>
+        </a>
+    `;
+    wrap.classList.remove("hidden");
+}
+
 function setMessage(text, isError = false) {
     const el = document.getElementById("userMessage");
     el.textContent = text;
@@ -504,6 +571,10 @@ async function loadEvents() {
                 renderSelectedEvent(selected);
             }
         }
+
+        if (state.registeredTeam && String(state.registeredTeam.paymentStatus || "").toUpperCase() === "SUCCESS") {
+            renderTelegramJoin(state.registeredTeam);
+        }
     } catch (error) {
         setMessage(error.message, true);
     }
@@ -557,6 +628,7 @@ function renderTeamConfirmation(team) {
 function showPaymentFlowView() {
     document.getElementById("paymentFlowView").classList.remove("hidden");
     document.getElementById("paymentSuccessView").classList.add("hidden");
+    renderTelegramJoin(null);
 }
 
 function showPaymentSuccessView(team, message) {
@@ -566,6 +638,7 @@ function showPaymentSuccessView(team, message) {
     document.getElementById("thankYouTeam").textContent = team
         ? `Team: ${team.teamName} (${team.teamId})`
         : "";
+    renderTelegramJoin(team);
 }
 
 async function submitRegistration() {
