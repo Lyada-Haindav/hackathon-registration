@@ -56,6 +56,11 @@ public class WebController {
         return "faculty-register";
     }
 
+    @GetMapping("/organizer/approve")
+    public String organizerApprove() {
+        return "organizer-approve";
+    }
+
     @GetMapping("/faculty-register")
     public String facultyRegisterRedirect() {
         return "redirect:/organizer/register";

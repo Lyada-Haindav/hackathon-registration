@@ -42,6 +42,7 @@ app:
     user-email-verification-required: ${USER_EMAIL_VERIFICATION_REQUIRED:true}
     email-verification-ttl-minutes: ${EMAIL_VERIFICATION_TTL_MINUTES:1440}
     password-reset-ttl-minutes: ${PASSWORD_RESET_TTL_MINUTES:30}
+    organizer-approval-ttl-minutes: ${ORGANIZER_APPROVAL_TTL_MINUTES:10080}
   email:
     enabled: ${EMAIL_ENABLED:false}
     from: ${EMAIL_FROM:${SMTP_USERNAME:no-reply@hackathonregister123.com}}

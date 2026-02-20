@@ -19,8 +19,14 @@ facultyRegisterForm.addEventListener("submit", async (event) => {
         }, false);
 
         setSession(response);
-        facultyRegisterMessageEl.textContent = "Organiser registration successful";
-        window.location.href = "/organizer/dashboard";
+        if (response && response.token) {
+            facultyRegisterMessageEl.textContent = "Organiser registration successful";
+            window.location.href = "/organizer/dashboard";
+            return;
+        }
+
+        facultyRegisterMessageEl.textContent = response.message || "Registration submitted. Wait for owner approval email.";
+        facultyRegisterForm.reset();
     } catch (error) {
         facultyRegisterMessageEl.textContent = error.message;
     }

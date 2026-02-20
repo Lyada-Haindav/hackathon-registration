@@ -45,6 +45,11 @@ public class AuthController {
         return ResponseEntity.ok(authService.facultyLogin(request));
     }
 
+    @GetMapping("/organizer/approve")
+    public ResponseEntity<MessageResponse> approveOrganizer(@RequestParam("token") String token) {
+        return ResponseEntity.ok(authService.approveOrganizer(token));
+    }
+
     @GetMapping("/verify-email")
     public ResponseEntity<MessageResponse> verifyEmail(@RequestParam("token") String token) {
         return ResponseEntity.ok(authService.verifyEmail(token));

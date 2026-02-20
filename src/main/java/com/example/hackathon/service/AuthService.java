@@ -15,6 +15,8 @@ import com.example.hackathon.model.Role;
 import com.example.hackathon.model.User;
 import com.example.hackathon.repository.UserRepository;
 import com.example.hackathon.security.JwtService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -29,6 +31,8 @@ import java.util.Map;
 @Service
 public class AuthService {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
+
     private final UserRepository userRepository;
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
@@ -40,6 +44,8 @@ public class AuthService {
     private final boolean userEmailVerificationRequired;
     private final long emailVerificationTtlMinutes;
     private final long passwordResetTtlMinutes;
+    private final long organizerApprovalTtlMinutes;
+    private final String organizerOwnerEmail;
 
     public AuthService(UserRepository userRepository,
                        UserService userService,
@@ -51,7 +57,9 @@ public class AuthService {
                        @Value("${app.faculty.secret-code:KLHAZ}") String facultySecretCode,
                        @Value("${app.auth.user-email-verification-required:true}") boolean userEmailVerificationRequired,
                        @Value("${app.auth.email-verification-ttl-minutes:1440}") long emailVerificationTtlMinutes,
-                       @Value("${app.auth.password-reset-ttl-minutes:30}") long passwordResetTtlMinutes) {
+                       @Value("${app.auth.password-reset-ttl-minutes:30}") long passwordResetTtlMinutes,
+                       @Value("${app.auth.organizer-approval-ttl-minutes:10080}") long organizerApprovalTtlMinutes,
+                       @Value("${app.admin.email:}") String organizerOwnerEmail) {
         this.userRepository = userRepository;
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
@@ -63,6 +71,8 @@ public class AuthService {
         this.userEmailVerificationRequired = userEmailVerificationRequired;
         this.emailVerificationTtlMinutes = emailVerificationTtlMinutes;
         this.passwordResetTtlMinutes = passwordResetTtlMinutes;
+        this.organizerApprovalTtlMinutes = organizerApprovalTtlMinutes;
+        this.organizerOwnerEmail = organizerOwnerEmail;
     }
 
     public AuthResponse registerUser(RegisterRequest request) {
@@ -73,8 +83,58 @@ public class AuthService {
         if (!facultySecretCode.equals(request.secretCode())) {
             throw new BadRequestException("Invalid organizer secret code");
         }
-        RegisterRequest registerRequest = new RegisterRequest(request.name(), request.email(), request.password());
-        return registerWithRole(registerRequest, Role.FACULTY);
+
+        ensureEmailServiceEnabled();
+        String normalizedEmail = userService.normalizeEmail(request.email());
+
+        if (userRepository.existsByEmail(normalizedEmail)) {
+            User existing = userService.findByEmail(normalizedEmail);
+            if (existing.getRole() == Role.FACULTY && !existing.isActive()) {
+                sendOrganizerApprovalMail(existing);
+                return new AuthResponse(
+                        null,
+                        existing.getId(),
+                        existing.getName(),
+                        existing.getEmail(),
+                        existing.getRole().name(),
+                        false,
+                        "Organiser registration is pending owner approval. Approval email sent to owner."
+                );
+            }
+            throw new BadRequestException("Email is already registered");
+        }
+
+        User user = new User();
+        user.setName(request.name());
+        user.setEmail(normalizedEmail);
+        user.setPassword(passwordEncoder.encode(request.password()));
+        user.setRole(Role.FACULTY);
+        user.setEmailVerified(true);
+        user.setActive(false);
+
+        User saved;
+        try {
+            saved = userRepository.save(user);
+        } catch (DuplicateKeyException ex) {
+            throw new BadRequestException("Email is already registered");
+        }
+
+        try {
+            sendOrganizerApprovalMail(saved);
+        } catch (BadRequestException ex) {
+            userRepository.deleteById(saved.getId());
+            throw ex;
+        }
+
+        return new AuthResponse(
+                null,
+                saved.getId(),
+                saved.getName(),
+                saved.getEmail(),
+                saved.getRole().name(),
+                false,
+                "Registration submitted. Owner approval is required before organiser login."
+        );
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -109,6 +169,9 @@ public class AuthService {
         User user = userService.findByEmail(email);
         if (user.getRole() != Role.FACULTY) {
             throw new BadRequestException("Only organizer accounts can use this login");
+        }
+        if (!user.isActive()) {
+            throw new BadRequestException("Organizer account is pending owner approval. Please wait for approval email.");
         }
 
         try {
@@ -211,6 +274,35 @@ public class AuthService {
         return new MessageResponse("Password updated successfully. Please login with your new password.");
     }
 
+    public MessageResponse approveOrganizer(String token) {
+        if (token == null || token.isBlank()) {
+            throw new BadRequestException("Approval token is required");
+        }
+
+        var authToken = authTokenService.getValidToken(token, AuthTokenType.ORGANIZER_APPROVAL);
+        User user = userService.findById(authToken.getUserId());
+        if (user.getRole() != Role.FACULTY) {
+            throw new BadRequestException("Approval link is valid only for organizer accounts");
+        }
+
+        if (user.isActive()) {
+            authTokenService.consumeToken(token, AuthTokenType.ORGANIZER_APPROVAL);
+            return new MessageResponse("Organiser is already approved.");
+        }
+
+        user.setActive(true);
+        userRepository.save(user);
+        authTokenService.consumeToken(token, AuthTokenType.ORGANIZER_APPROVAL);
+
+        try {
+            emailService.sendOrganizerApprovedEmail(user);
+        } catch (RuntimeException ex) {
+            log.warn("Organizer '{}' approved but confirmation email failed: {}", user.getEmail(), ex.getMessage());
+        }
+
+        return new MessageResponse("Organiser approved successfully. This organiser can now login.");
+    }
+
     private AuthResponse registerWithRole(RegisterRequest request, Role role) {
         String normalizedEmail = userService.normalizeEmail(request.email());
         if (role == Role.USER) {
@@ -309,6 +401,26 @@ public class AuthService {
                 // best effort cleanup for failed email deliveries
             }
             throw new BadRequestException("Unable to send password reset email. "
+                    + buildEmailTroubleshootingMessage(ex));
+        }
+    }
+
+    private void sendOrganizerApprovalMail(User user) {
+        String ownerEmail = userService.normalizeEmail(organizerOwnerEmail);
+        if (ownerEmail == null || ownerEmail.isBlank()) {
+            throw new BadRequestException("Owner email is not configured. Set ADMIN_EMAIL.");
+        }
+
+        String token = authTokenService.createToken(user, AuthTokenType.ORGANIZER_APPROVAL, organizerApprovalTtlMinutes);
+        try {
+            emailService.sendOrganizerApprovalRequestEmail(ownerEmail, user, token);
+        } catch (RuntimeException ex) {
+            try {
+                authTokenService.consumeToken(token, AuthTokenType.ORGANIZER_APPROVAL);
+            } catch (Exception ignored) {
+                // best effort cleanup for failed email deliveries
+            }
+            throw new BadRequestException("Unable to send organizer approval email. "
                     + buildEmailTroubleshootingMessage(ex));
         }
     }

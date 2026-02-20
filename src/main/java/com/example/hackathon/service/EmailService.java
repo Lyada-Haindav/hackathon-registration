@@ -85,6 +85,31 @@ public class EmailService {
         sendTextEmail(user.getEmail(), subject, body);
     }
 
+    public void sendOrganizerApprovalRequestEmail(String ownerEmail, User organizer, String token) {
+        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8);
+        String approvalUrl = baseUrl + "/organizer/approve?token=" + encodedToken;
+        String subject = "Organizer approval required: " + safeValue(organizer.getName());
+        String body = "Hello Owner,\n\n"
+                + "A new organizer has registered and is waiting for your approval.\n\n"
+                + "Name: " + safeValue(organizer.getName()) + "\n"
+                + "Email: " + safeValue(organizer.getEmail()) + "\n\n"
+                + "Approve organizer:\n"
+                + approvalUrl + "\n\n"
+                + "If this request is not valid, ignore this email and the account will remain inactive.\n\n"
+                + "KLH Hackathon Registration";
+        sendTextEmail(ownerEmail, subject, body);
+    }
+
+    public void sendOrganizerApprovedEmail(User organizer) {
+        String subject = "Organizer account approved";
+        String body = "Hello " + organizer.getName() + ",\n\n"
+                + "Your organizer account has been approved by the owner.\n"
+                + "You can now login here:\n"
+                + baseUrl + "/organizer/login\n\n"
+                + "KLH Hackathon Registration";
+        sendTextEmail(organizer.getEmail(), subject, body);
+    }
+
     public void sendPaymentConfirmationEmail(User user, Team team, HackathonEvent event, Payment payment) {
         String subject = "Payment confirmed for " + event.getTitle();
         String eventDates = formatEventDateRange(event.getStartDate(), event.getEndDate());
