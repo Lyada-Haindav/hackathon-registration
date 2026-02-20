@@ -2309,3 +2309,521 @@ code {
         scroll-behavior: auto !important;
     }
 }
+
+/* Reference palette override: blue + light gray + orange (no layout changes). */
+:root {
+    --bg: #e8edf7;
+    --bg-soft: #dde5f2;
+    --card: #ffffff;
+    --text: #222832;
+    --muted: #80889a;
+    --accent: #f39f12;
+    --accent-strong: #de8b06;
+    --ok: #26814a;
+    --danger: #d44747;
+    --line: #d7deea;
+    --shadow: 0 14px 30px rgba(43, 72, 130, 0.12);
+}
+
+body {
+    color: var(--text);
+    background: linear-gradient(180deg, #edf2fb 0%, #e7edf8 100%);
+}
+
+body.dashboard-bg,
+body.auth-page {
+    color: var(--text);
+    background: linear-gradient(180deg, #edf2fb 0%, #e6edf8 100%);
+}
+
+body.dashboard-bg::before,
+body.dashboard-bg::after,
+body.auth-page::before,
+body.auth-page::after {
+    display: none;
+}
+
+body.dashboard-bg .shape-one,
+body.auth-page .shape-one {
+    background: rgba(49, 98, 233, 0.1);
+    filter: blur(1px);
+}
+
+body.dashboard-bg .shape-two,
+body.auth-page .shape-two {
+    background: rgba(243, 159, 18, 0.11);
+    filter: blur(1px);
+}
+
+body.dashboard-bg .dashboard-header,
+body.auth-page .dashboard-header {
+    background: linear-gradient(92deg, #2347b2, #2f66e8);
+    border: 1px solid #2d5fd7;
+    box-shadow: 0 14px 28px rgba(32, 65, 152, 0.27);
+    border-radius: 16px;
+}
+
+body.auth-page .auth-shell,
+body.dashboard-bg .simple-shell,
+body.dashboard-bg .wizard-shell,
+body.dashboard-bg .side-card,
+body.dashboard-bg .event-card,
+body.dashboard-bg .mini-card,
+body.dashboard-bg .selected-event,
+body.dashboard-bg .member-card,
+body.dashboard-bg .wizard-panel,
+body.dashboard-bg .field-builder-row,
+body.dashboard-bg .score-row,
+body.dashboard-bg .team-confirmation .confirm-card,
+body.dashboard-bg .thankyou-card,
+body.dashboard-bg .policy-note,
+body.dashboard-bg .status-banner,
+body.auth-page .status-banner {
+    background: #ffffff;
+    border: 1px solid #d7deea;
+    box-shadow: 0 10px 22px rgba(52, 79, 137, 0.11);
+    backdrop-filter: none;
+}
+
+body.dashboard-bg .page-title,
+body.auth-page .page-title {
+    color: #1f2635;
+    text-shadow: none;
+}
+
+body.dashboard-bg .dashboard-header .page-title,
+body.auth-page .dashboard-header .page-title {
+    color: #f6f9ff;
+}
+
+body.dashboard-bg .page-subtitle,
+body.auth-page .page-subtitle,
+body.dashboard-bg .muted,
+body.auth-page .muted,
+body.dashboard-bg .event-card p,
+body.dashboard-bg .mini-card p,
+body.dashboard-bg .meta-row,
+body.dashboard-bg label,
+body.auth-page label {
+    color: #818a9c;
+}
+
+body.dashboard-bg .dashboard-header .page-subtitle,
+body.auth-page .dashboard-header .page-subtitle {
+    color: #d9e5ff;
+}
+
+body.dashboard-bg .eyebrow,
+body.auth-page .eyebrow {
+    color: #f2a71b;
+}
+
+body.dashboard-bg .dashboard-header .eyebrow,
+body.auth-page .dashboard-header .eyebrow {
+    color: #ffc54e;
+}
+
+body.dashboard-bg input,
+body.dashboard-bg textarea,
+body.dashboard-bg select,
+body.auth-page input,
+body.auth-page textarea,
+body.auth-page select {
+    background: #f8faff;
+    color: #1f2635;
+    border: 1px solid #d4dced;
+}
+
+body.dashboard-bg input::placeholder,
+body.dashboard-bg textarea::placeholder,
+body.auth-page input::placeholder,
+body.auth-page textarea::placeholder {
+    color: #97a1b6;
+}
+
+body.dashboard-bg input:focus,
+body.dashboard-bg textarea:focus,
+body.dashboard-bg select:focus,
+body.auth-page input:focus,
+body.auth-page textarea:focus,
+body.auth-page select:focus {
+    outline: none;
+    border-color: #3d6cdf;
+    box-shadow: 0 0 0 3px rgba(61, 108, 223, 0.18);
+}
+
+body.dashboard-bg button,
+body.auth-page button,
+body.dashboard-bg .next-btn,
+body.auth-page .next-btn {
+    color: #ffffff;
+    background: linear-gradient(92deg, #eea11d, #f6b642);
+    border: 1px solid #e09a1f;
+    box-shadow: 0 10px 20px rgba(228, 152, 30, 0.24);
+}
+
+body.dashboard-bg .ghost-btn,
+body.dashboard-bg .ghost-link,
+body.auth-page .ghost-btn,
+body.auth-page .ghost-link {
+    color: #334665;
+    background: #f4f7fd;
+    border: 1px solid #ccd7eb;
+}
+
+body.dashboard-bg .dashboard-header .ghost-link,
+body.auth-page .dashboard-header .ghost-link {
+    color: #f2f6ff;
+    background: rgba(255, 255, 255, 0.13);
+    border: 1px solid rgba(236, 244, 255, 0.34);
+}
+
+body.dashboard-bg .danger-btn,
+body.auth-page .danger-btn {
+    color: #f6f9ff;
+    background: linear-gradient(92deg, #1f3168, #24448f);
+    border: 1px solid #3556a9;
+}
+
+body.dashboard-bg .danger-outline,
+body.auth-page .danger-outline {
+    color: #ad2b2b;
+    border-color: #efc4c4;
+    background: #fff4f4;
+}
+
+body.dashboard-bg .status-banner,
+body.auth-page .status-banner {
+    color: #335ea9;
+    background: #edf3ff;
+    border-color: #d1ddf2;
+}
+
+body.dashboard-bg .status-banner.error,
+body.auth-page .status-banner.error {
+    color: #b33a3a;
+    border-color: #efc3c3;
+    background: #fff3f3;
+}
+
+body.dashboard-bg .policy-note {
+    color: #8a580a;
+    border-color: #f2d5a1;
+    background: #fff7e8;
+}
+
+body.dashboard-bg .step,
+body.auth-page .step {
+    border-color: #d6deed;
+    background: #f8faff;
+}
+
+body.dashboard-bg .step span,
+body.auth-page .step span {
+    border-color: #d6deed;
+}
+
+body.dashboard-bg .step p,
+body.auth-page .step p {
+    color: #8590a5;
+}
+
+body.dashboard-bg .step.active,
+body.auth-page .step.active {
+    border-color: #efc07a;
+    background: #fff6e8;
+}
+
+body.dashboard-bg .step.active span,
+body.dashboard-bg .step.completed span,
+body.auth-page .step.active span,
+body.auth-page .step.completed span {
+    background: linear-gradient(95deg, #ed9e1a, #f5b43e);
+    border-color: transparent;
+}
+
+body.dashboard-bg .status-pill.active {
+    background: #e8f6ee;
+    color: #1c7d44;
+    border-color: #bfe3cd;
+}
+
+body.dashboard-bg .status-pill.inactive {
+    background: #fdeeee;
+    color: #b53a3a;
+    border-color: #f2c0c0;
+}
+
+body.dashboard-bg .status-pill.pending {
+    background: #fff7e8;
+    color: #a36411;
+    border-color: #f3d4a0;
+}
+
+body.dashboard-bg .status-pill.hold {
+    background: #eef3ff;
+    color: #355fbb;
+    border-color: #c9d7f5;
+}
+
+body.dashboard-bg .review-grid section {
+    background: #ffffff;
+    border: 1px solid #d6deec;
+    box-shadow: none;
+}
+
+body.dashboard-bg .review-grid section h3,
+body.dashboard-bg .review-grid section p,
+body.dashboard-bg .review-grid section li,
+body.dashboard-bg .review-grid section strong {
+    color: #273247;
+}
+
+body.dashboard-bg .modal-card,
+body.auth-page .modal-card {
+    background: #ffffff;
+    border: 1px solid #d4ddec;
+    color: #243049;
+    box-shadow: 0 20px 36px rgba(53, 83, 142, 0.2);
+}
+
+body.dashboard-bg .modal-title,
+body.auth-page .modal-title {
+    color: #1f2b41;
+}
+
+body.dashboard-bg .modal-body,
+body.auth-page .modal-body {
+    color: #5f6a82;
+}
+
+body.dashboard-bg .modal-overlay.error .modal-card,
+body.auth-page .modal-overlay.error .modal-card {
+    background: #fff6f6;
+    border-color: #f2c4c4;
+}
+
+body.dashboard-bg .output,
+body.auth-page .output {
+    background: #f8faff;
+    border-color: #d4dcec;
+    color: #26334b;
+}
+
+body.dashboard-bg a,
+body.auth-page a {
+    color: #2e5fd9;
+}
+
+body.auth-page .organizer-access-grid .card {
+    background: #ffffff;
+    border: 1px solid #d7deea;
+}
+
+body.auth-page .organizer-access-grid .card h3 {
+    color: #2a3349;
+}
+
+body.auth-page .organizer-access-grid .card p {
+    color: #7f8899;
+}
+
+.inline-forgot-link {
+    color: #2f5fd6;
+}
+
+.inline-forgot-link:hover {
+    color: #22489f;
+}
+
+/* Home page aligned to same palette */
+body.home-neo {
+    color: #202a3d;
+    background: linear-gradient(180deg, #eef3fc 0%, #e7edf8 100%);
+}
+
+.home-grid-overlay {
+    opacity: 0.12;
+    background-image:
+        linear-gradient(to right, rgba(32, 56, 108, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(32, 56, 108, 0.12) 1px, transparent 1px);
+    mask-image: none;
+}
+
+.home-glow-a {
+    background: rgba(48, 98, 232, 0.12);
+}
+
+.home-glow-b {
+    background: rgba(243, 159, 18, 0.14);
+}
+
+.home-glow-c {
+    background: rgba(44, 73, 176, 0.1);
+}
+
+.home-v2-header {
+    background: linear-gradient(92deg, #2347b2, #2f66e8);
+    border: 1px solid #2d5fd7;
+    border-radius: 16px;
+    padding: 10px 12px;
+    box-shadow: 0 14px 28px rgba(32, 65, 152, 0.27);
+}
+
+.home-logo {
+    color: #f5f9ff;
+    border: 1px solid rgba(244, 250, 255, 0.4);
+    background: rgba(255, 255, 255, 0.12);
+}
+
+.home-v2-nav a {
+    color: #f5f9ff;
+    border: 1px solid rgba(244, 250, 255, 0.38);
+    background: rgba(255, 255, 255, 0.13);
+}
+
+.title-line {
+    background: linear-gradient(120deg, #24345c 6%, #325ebd 56%, #5d7fce 94%);
+    -webkit-background-clip: text;
+    background-clip: text;
+}
+
+.home-primary-btn {
+    color: #ffffff;
+    background: linear-gradient(95deg, #eea11d, #f6b642);
+    box-shadow: 0 12px 22px rgba(228, 152, 30, 0.24);
+}
+
+.home-secondary-btn {
+    color: #324c77;
+    border-color: #c7d5ec;
+    background: #f5f8fe;
+}
+
+.home-events-shell,
+.home-marquee-wrap {
+    border: 1px solid #d8dfea;
+    background: #ffffff;
+    backdrop-filter: none;
+}
+
+.home-events-shell h2 {
+    color: #243049;
+}
+
+.home-event-card {
+    border: 1px solid #d7deea;
+    background: #ffffff;
+}
+
+.home-event-poster {
+    border-bottom: 1px solid #d7deea;
+    background: #f4f7fd;
+}
+
+.home-event-poster-fallback {
+    color: #2f4f98;
+    text-shadow: none;
+}
+
+.home-event-content h3 {
+    color: #25324a;
+}
+
+.home-event-about {
+    color: #7e889a;
+}
+
+.home-event-meta {
+    color: #8a93a7;
+}
+
+.home-marquee-track span {
+    color: #4f5f81;
+}
+
+/* Trial card style (preview only). */
+body.dashboard-bg .card,
+body.dashboard-bg .simple-shell,
+body.dashboard-bg .wizard-shell,
+body.dashboard-bg .side-card,
+body.dashboard-bg .event-card,
+body.dashboard-bg .mini-card,
+body.dashboard-bg .selected-event,
+body.dashboard-bg .member-card,
+body.dashboard-bg .wizard-panel,
+body.dashboard-bg .field-builder-row,
+body.dashboard-bg .score-row,
+body.dashboard-bg .team-confirmation .confirm-card,
+body.dashboard-bg .thankyou-card,
+body.auth-page .auth-shell,
+body.auth-page .card,
+body.home-neo .home-events-shell,
+body.home-neo .home-event-card {
+    position: relative;
+    overflow: hidden;
+    border-radius: 20px;
+    border: 1px solid #ccd8ee;
+    background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+    box-shadow:
+        0 16px 30px rgba(28, 59, 126, 0.12),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+}
+
+body.dashboard-bg .card::before,
+body.dashboard-bg .simple-shell::before,
+body.dashboard-bg .wizard-shell::before,
+body.dashboard-bg .side-card::before,
+body.dashboard-bg .event-card::before,
+body.dashboard-bg .mini-card::before,
+body.dashboard-bg .selected-event::before,
+body.dashboard-bg .member-card::before,
+body.dashboard-bg .wizard-panel::before,
+body.dashboard-bg .field-builder-row::before,
+body.dashboard-bg .score-row::before,
+body.dashboard-bg .team-confirmation .confirm-card::before,
+body.dashboard-bg .thankyou-card::before,
+body.auth-page .auth-shell::before,
+body.auth-page .card::before,
+body.home-neo .home-events-shell::before,
+body.home-neo .home-event-card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, #2f66e8, #f4ac30);
+    opacity: 0.95;
+}
+
+body.dashboard-bg .card:hover,
+body.dashboard-bg .simple-shell:hover,
+body.dashboard-bg .wizard-shell:hover,
+body.dashboard-bg .side-card:hover,
+body.dashboard-bg .event-card:hover,
+body.dashboard-bg .mini-card:hover,
+body.dashboard-bg .selected-event:hover,
+body.dashboard-bg .member-card:hover,
+body.dashboard-bg .wizard-panel:hover,
+body.auth-page .auth-shell:hover,
+body.auth-page .card:hover,
+body.home-neo .home-event-card:hover {
+    transform: translateY(-4px);
+    box-shadow:
+        0 22px 34px rgba(28, 59, 126, 0.16),
+        inset 0 1px 0 rgba(255, 255, 255, 0.98);
+}
+
+body.dashboard-bg .event-card,
+body.dashboard-bg .mini-card {
+    border-left: 4px solid #2f66e8;
+}
+
+body.home-neo .home-event-card {
+    border-left: 4px solid #2f66e8;
+}
+
+body.home-neo .home-events-shell {
+    border-left: 4px solid #f4ac30;
+}
