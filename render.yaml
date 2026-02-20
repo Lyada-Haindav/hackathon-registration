@@ -22,9 +22,31 @@ services:
         sync: false
       - key: PAYMENT_MOCK_ENABLED
         value: "false"
-      - key: RAZORPAY_KEY_ID
+      - key: PHONEPE_ENABLED
+        value: "true"
+      - key: PHONEPE_MERCHANT_ID
         sync: false
-      - key: RAZORPAY_KEY_SECRET
+      - key: PHONEPE_SALT_KEY
+        sync: false
+      - key: PHONEPE_SALT_INDEX
+        value: "1"
+      - key: PHONEPE_BASE_URL
+        value: https://api-preprod.phonepe.com/apis/pg-sandbox
+      - key: EMAIL_ENABLED
+        value: "true"
+      - key: EMAIL_FROM
+        sync: false
+      - key: SMTP_HOST
+        value: smtp-relay.brevo.com
+      - key: SMTP_PORT
+        value: "587"
+      - key: SMTP_USERNAME
+        sync: false
+      - key: SMTP_PASSWORD
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: APP_BASE_URL
         sync: false
       - key: PAYMENT_FEE_SPLIT_MEMBERS
         value: "4"

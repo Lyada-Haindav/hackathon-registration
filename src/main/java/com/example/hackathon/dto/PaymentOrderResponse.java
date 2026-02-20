@@ -5,8 +5,9 @@ import java.math.BigDecimal;
 public record PaymentOrderResponse(
         String teamId,
         String orderId,
-        String keyId,
+        String gateway,
         BigDecimal amount,
-        String currency
+        String currency,
+        String redirectUrl
 ) {
 }

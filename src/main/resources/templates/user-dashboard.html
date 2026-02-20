@@ -4,8 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Dashboard</title>
-    <link rel="stylesheet" href="/css/styles.css?v=device_v7">
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <link rel="stylesheet" href="/css/styles.css?v=device_v8">
     <link rel="icon" type="image/x-icon" href="/favicon.ico?v=h3">
     <link rel="icon" type="image/png" sizes="32x32" href="/img/h-logo-32.png?v=h3">
     <link rel="icon" type="image/svg+xml" href="/img/h-logo.svg?v=h3">
@@ -82,6 +81,11 @@
                         <p id="memberLimitHint" class="muted">Team size: minimum 1 member, maximum 4 members.</p>
                         <div id="membersContainer" class="member-cards"></div>
                     </div>
+
+                    <div id="livePaymentPreview" class="upi-preview-box">
+                        <h3>Live PhonePe Payment Preview</h3>
+                        <p id="livePaymentAmount" class="muted">Payable Amount: INR 0.00</p>
+                    </div>
                 </form>
 
                 <div class="wizard-actions">
@@ -107,9 +111,13 @@
                         <label>Team ID
                             <input id="paymentTeamId" placeholder="Team ID" readonly>
                         </label>
-                        <button onclick="createOrder()">Pay with Razorpay</button>
                     </div>
-                    <p class="muted">Complete payment to confirm registration.</p>
+                    <p id="phonePeAmountSummary" class="muted">Payable Amount: INR 0.00</p>
+                    <div class="wizard-actions">
+                        <button class="next-btn upi-intent-btn" type="button" onclick="startPhonePePayment()">Pay with PhonePe</button>
+                        <button class="ghost-btn" type="button" onclick="checkPhonePePaymentStatus()">Check Payment Status</button>
+                    </div>
+                    <p class="muted">You will be redirected to PhonePe checkout. After payment, return to this page to view updated status.</p>
                 </div>
                 <div id="paymentSuccessView" class="thankyou-card hidden">
                     <h3>Thank You!</h3>
@@ -144,6 +152,6 @@
     </section>
 </div>
 <script src="/js/common.js"></script>
-<script src="/js/user.js?v=ready_v6"></script>
+<script src="/js/user.js?v=ready_v12"></script>
 </body>
 </html>

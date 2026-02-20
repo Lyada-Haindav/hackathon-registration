@@ -13,6 +13,7 @@ const state = {
     registrationLocked: false,
     leaderboardAvailable: false
 };
+const PHONEPE_PENDING_KEY = "phonepePendingPayment";
 
 function userEmail() {
     return localStorage.getItem("email") || "user";
@@ -39,6 +40,12 @@ function getPerMemberFee(event) {
 
 function getPayableFee(event, memberCount) {
     return getPerMemberFee(event) * Math.max(Number(memberCount) || 1, 1);
+}
+
+function formatInr(amount) {
+    const value = Number(amount);
+    const safe = Number.isFinite(value) ? value : 0;
+    return `INR ${safe.toFixed(2)}`;
 }
 
 function getSafeTelegramUrl(rawUrl) {
@@ -112,6 +119,32 @@ function setMessage(text, isError = false) {
     const el = document.getElementById("userMessage");
     el.textContent = text;
     el.classList.toggle("error", isError);
+}
+
+function renderLivePaymentPreview(memberCount) {
+    const amountEl = document.getElementById("livePaymentAmount");
+    if (!amountEl) {
+        return;
+    }
+
+    const event = state.selectedEvent;
+    const count = Math.max(Number(memberCount) || 1, 1);
+    const perMemberFee = getPerMemberFee(event);
+    const amount = getPayableFee(event, count);
+    amountEl.textContent = `Payable Amount: ${formatInr(amount)} (${formatInr(perMemberFee)} x ${count})`;
+}
+
+function renderPhonePePaymentPanel(team) {
+    const amountEl = document.getElementById("phonePeAmountSummary");
+    if (!amountEl) {
+        return;
+    }
+
+    const event = getEventForTeam(team) || state.selectedEvent;
+    const teamSize = Math.max(Number(team && team.teamSize) || 1, 1);
+    const perMemberFee = getPerMemberFee(event);
+    const amount = getPayableFee(event, teamSize);
+    amountEl.textContent = `Payable Amount: ${formatInr(amount)} (${formatInr(perMemberFee)} x ${teamSize} member${teamSize > 1 ? "s" : ""})`;
 }
 
 function setStep(stepNumber) {
@@ -263,7 +296,6 @@ function renderEvents(events) {
     for (const event of events) {
         const card = document.createElement("div");
         card.className = "event-card";
-        const fee = Number(event.registrationFee || 0);
         const perMemberFee = getPerMemberFee(event);
         const registrationOpen = Boolean(event.registrationOpen);
         card.innerHTML = `
@@ -271,10 +303,10 @@ function renderEvents(events) {
             <p>${event.description}</p>
             <div class="meta-row">
                 <span>${event.startDate} to ${event.endDate}</span>
-                <span class="price">INR ${perMemberFee.toFixed(2)}/member</span>
+                <span class="price">${formatInr(perMemberFee)}/member</span>
             </div>
             <p class="muted">Registration: <strong>${registrationOpen ? "Open" : "Closed"}</strong></p>
-            <p class="muted">Configured total fee: INR ${fee.toFixed(2)}</p>
+            <p class="muted">Fee per member: ${formatInr(perMemberFee)} (set by organizer event fee).</p>
             <button type="button" data-event-id="${event.id}">${registrationOpen ? "Select Event" : "Registration Closed"}</button>
         `;
 
@@ -305,9 +337,7 @@ function updateLeaderboardLinks(events) {
 
 function renderSelectedEvent(event) {
     const selectedCard = document.getElementById("selectedEventCard");
-    const fee = Number(event.registrationFee || 0);
     const perMemberFee = getPerMemberFee(event);
-    const splitMembers = getSplitMembers(event);
     const registrationStatus = event.registrationOpen ? "Open" : "Closed";
     selectedCard.classList.remove("hidden");
     selectedCard.innerHTML = `
@@ -315,10 +345,10 @@ function renderSelectedEvent(event) {
         <p>${event.description}</p>
         <div class="meta-row">
             <span>${event.startDate} to ${event.endDate}</span>
-            <strong>Fee: INR ${perMemberFee.toFixed(2)} per member</strong>
+            <strong>Fee: ${formatInr(perMemberFee)} per member</strong>
         </div>
         <p class="muted">Registration Status: ${registrationStatus}</p>
-        <p class="muted">Configured as INR ${fee.toFixed(2)} for ${splitMembers} members.</p>
+        <p class="muted">Total payable updates based on team size (1 to 4 members).</p>
     `;
 }
 
@@ -458,6 +488,7 @@ function bindMemberEvents() {
             if (state.selectedEvent && !state.registrationLocked) {
                 saveDraft();
             }
+            renderLivePaymentPreview(collectMembers().length);
         };
     });
 
@@ -488,6 +519,7 @@ function renderMembersFromDraft(members) {
         container.insertAdjacentHTML("beforeend", memberTemplate(index, member));
     });
     bindMemberEvents();
+    renderLivePaymentPreview(safeMembers.length);
 }
 
 function addMemberRow() {
@@ -507,6 +539,7 @@ function addMemberRow() {
     container.insertAdjacentHTML("beforeend", memberTemplate(index, { leader: count === 0 }));
     bindMemberEvents();
     saveDraft();
+    renderLivePaymentPreview(count + 1);
 }
 
 function collectFormResponses() {
@@ -532,15 +565,16 @@ function renderReview() {
     const container = document.getElementById("reviewContainer");
     const members = collectMembers();
     const responses = collectFormResponses();
+    const perMemberFee = getPerMemberFee(state.selectedEvent);
+    const payable = getPayableFee(state.selectedEvent, members.length);
 
     container.innerHTML = `
         <section>
             <h3>Event</h3>
             <p><strong>${state.selectedEvent.title}</strong></p>
             <p>${state.selectedEvent.description}</p>
-            <p>Total Event Fee: INR ${Number(state.selectedEvent.registrationFee || 0).toFixed(2)}</p>
-            <p>Per Member Fee: INR ${getPerMemberFee(state.selectedEvent).toFixed(2)}</p>
-            <p>Payable Amount: INR ${getPayableFee(state.selectedEvent, members.length).toFixed(2)}</p>
+            <p>Fee Per Member: ${formatInr(perMemberFee)}</p>
+            <p>Payable Amount: ${formatInr(payable)}</p>
         </section>
         <section>
             <h3>Team Members</h3>
@@ -621,13 +655,14 @@ function renderTeamConfirmation(team) {
     if (isPaid) {
         showPaymentSuccessView(team, "Your registration is confirmed.");
     } else {
-        showPaymentFlowView();
+        showPaymentFlowView(team);
     }
 }
 
-function showPaymentFlowView() {
+function showPaymentFlowView(team) {
     document.getElementById("paymentFlowView").classList.remove("hidden");
     document.getElementById("paymentSuccessView").classList.add("hidden");
+    renderPhonePePaymentPanel(team || state.registeredTeam);
     renderTelegramJoin(null);
 }
 
@@ -679,7 +714,7 @@ async function submitRegistration() {
     }
 }
 
-async function createOrder() {
+async function startPhonePePayment() {
     const teamId = document.getElementById("paymentTeamId").value || (state.registeredTeam && state.registeredTeam.teamId);
     if (!teamId) {
         setMessage("No team selected for payment.", true);
@@ -687,78 +722,90 @@ async function createOrder() {
     }
 
     try {
-        const order = await apiFetch(`/api/user/payments/${teamId}/order`, { method: "POST" });
-
-        if (String(order.orderId || "").startsWith("mock_order_")) {
-            setMessage("Mock payment mode active. Completing payment automatically.");
-            await verifyPayment(order.teamId, {
-                razorpay_order_id: order.orderId,
-                razorpay_payment_id: `mock_pay_${Date.now()}`,
-                razorpay_signature: "mock_signature"
-            });
+        const response = await apiFetch(`/api/user/payments/${teamId}/order`, { method: "POST" });
+        if (!response || !response.redirectUrl) {
+            if (Number(response && response.amount) <= 0) {
+                await checkPhonePePaymentStatus(teamId);
+                return;
+            }
+            setMessage("Unable to start PhonePe checkout. Please try again.", true);
             return;
         }
 
-        if (order.orderId === "FREE_REGISTRATION") {
-            setMessage("Thank you! Registration confirmed.");
-            loadMyTeams();
-            return;
-        }
-
-        if (window.Razorpay) {
-            openRazorpayCheckout(order);
-            return;
-        }
-
-        setMessage("Razorpay script unavailable. Copy order data for manual verification.", true);
+        localStorage.setItem(PHONEPE_PENDING_KEY, JSON.stringify({
+            teamId,
+            merchantTransactionId: response.orderId
+        }));
+        setMessage("Redirecting to PhonePe checkout...");
+        window.location.href = response.redirectUrl;
     } catch (error) {
         setMessage(error.message, true);
     }
 }
 
-function openRazorpayCheckout(order) {
-    const options = {
-        key: order.keyId,
-        amount: Math.round(Number(order.amount) * 100),
-        currency: order.currency,
-        name: "KLH hackathon registration",
-        description: "Team Registration Fee",
-        order_id: order.orderId,
-        handler: async function (response) {
-            await verifyPayment(order.teamId, response);
-        },
-        theme: { color: "#D35400" }
-    };
+async function checkPhonePePaymentStatus(explicitTeamId = null, explicitTxnId = null) {
+    const teamId = explicitTeamId || document.getElementById("paymentTeamId").value || (state.registeredTeam && state.registeredTeam.teamId);
+    if (!teamId) {
+        setMessage("No team selected for payment status check.", true);
+        return;
+    }
 
-    const razorpay = new Razorpay(options);
-    razorpay.on("payment.failed", () => setMessage("Payment failed. Please retry.", true));
-    razorpay.open();
-}
-
-async function verifyPayment(teamId, razorpayResponse) {
-    const payload = {
-        razorpayOrderId: razorpayResponse.razorpay_order_id,
-        razorpayPaymentId: razorpayResponse.razorpay_payment_id,
-        razorpaySignature: razorpayResponse.razorpay_signature
-    };
+    let merchantTransactionId = explicitTxnId || "";
+    if (!merchantTransactionId) {
+        const pendingRaw = localStorage.getItem(PHONEPE_PENDING_KEY);
+        if (pendingRaw) {
+            try {
+                const pending = JSON.parse(pendingRaw);
+                if (pending && pending.teamId === teamId && pending.merchantTransactionId) {
+                    merchantTransactionId = pending.merchantTransactionId;
+                }
+            } catch (_) {
+                // ignore invalid local storage payload
+            }
+        }
+    }
 
     try {
-        const response = await apiFetch(`/api/user/payments/${teamId}/verify`, {
-            method: "POST",
-            body: payload
-        });
+        const query = merchantTransactionId
+            ? `?merchantTransactionId=${encodeURIComponent(merchantTransactionId)}`
+            : "";
+        const response = await apiFetch(`/api/user/payments/${teamId}/phonepe/status${query}`);
 
-        if (String(response.paymentStatus || "").toUpperCase() === "SUCCESS") {
-            const team = state.registeredTeam || state.myTeams.find((item) => item.teamId === teamId);
-            showPaymentSuccessView(team, "Your payment was successful.");
-            setMessage("Thank you! Payment successful.");
-        } else {
-            setMessage(response.message);
+        const latestTeams = await apiFetch("/api/user/teams");
+        state.myTeams = latestTeams;
+        const team = latestTeams.find((item) => item.teamId === teamId) || state.registeredTeam;
+        state.registeredTeam = team || state.registeredTeam;
+        renderMyTeams(latestTeams);
+        applySingleTeamPolicy();
+
+        const status = String(response && response.paymentStatus || "").toUpperCase();
+        if (status === "SUCCESS") {
+            showPaymentSuccessView(state.registeredTeam, "Your PhonePe payment was successful.");
+            localStorage.removeItem(PHONEPE_PENDING_KEY);
+        } else if (status === "FAILED") {
+            showPaymentFlowView(state.registeredTeam);
         }
-        loadMyTeams();
+
+        setMessage(response.message || "Payment status updated.");
     } catch (error) {
         setMessage(error.message, true);
     }
+}
+
+async function handlePhonePeReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const teamId = params.get("paymentTeamId");
+    const txnId = params.get("phonepeTxnId");
+    if (!teamId || !txnId) {
+        return;
+    }
+
+    await checkPhonePePaymentStatus(teamId, txnId);
+    params.delete("paymentTeamId");
+    params.delete("phonepeTxnId");
+    const cleanedQuery = params.toString();
+    const cleanedUrl = cleanedQuery ? `${window.location.pathname}?${cleanedQuery}` : window.location.pathname;
+    window.history.replaceState({}, "", cleanedUrl);
 }
 
 function renderMyTeams(teams) {
@@ -781,7 +828,7 @@ function renderMyTeams(teams) {
             <p>Payment: <strong>${team.paymentStatus}</strong></p>
             <p>Problem: ${team.selectedProblemStatementTitle || "Not selected"}</p>
             <p>Score: ${Number(team.totalScore || 0).toFixed(2)}</p>
-            ${isPaymentSuccess ? "<p class='muted'>Payment completed.</p>" : `<button type="button" class="ghost-btn small" data-team-id="${team.teamId}">Pay / Retry</button>`}
+            ${isPaymentSuccess ? "<p class='muted'>Payment completed.</p>" : `<button type="button" class="ghost-btn small" data-team-id="${team.teamId}">Pay with PhonePe</button>`}
         `;
 
         const payButton = card.querySelector("button");
@@ -815,7 +862,7 @@ function applySingleTeamPolicy() {
     } else {
         note.classList.add("hidden");
         note.textContent = "";
-        showPaymentFlowView();
+        showPaymentFlowView(null);
     }
 }
 
@@ -830,18 +877,24 @@ async function loadMyTeams() {
     }
 }
 
-setMessage(`Logged in as ${userEmail()}`);
-setStep(1);
-loadEvents();
-loadMyTeams();
-renderMembersFromDraft([]);
+async function init() {
+    setMessage(`Logged in as ${userEmail()}`);
+    setStep(1);
+    await loadEvents();
+    await loadMyTeams();
+    renderMembersFromDraft([]);
+    await handlePhonePeReturn();
+}
+
+init();
 
 window.nextStep = nextStep;
 window.prevStep = prevStep;
 window.loadEvents = loadEvents;
 window.addMemberRow = addMemberRow;
 window.submitRegistration = submitRegistration;
-window.createOrder = createOrder;
+window.startPhonePePayment = startPhonePePayment;
+window.checkPhonePePaymentStatus = checkPhonePePaymentStatus;
 window.loadMyTeams = loadMyTeams;
 window.saveDraft = saveDraft;
 window.logout = logout;

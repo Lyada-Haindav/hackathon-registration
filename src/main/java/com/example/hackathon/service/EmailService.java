@@ -30,7 +30,6 @@ public class EmailService {
     private final JavaMailSender mailSender;
     private final boolean emailEnabled;
     private final String fromEmail;
-    private final String smtpUsername;
     private final String baseUrl;
     private final String brevoApiKey;
     private final String brevoApiUrl;
@@ -40,14 +39,12 @@ public class EmailService {
     public EmailService(JavaMailSender mailSender,
                         @Value("${app.email.enabled:false}") boolean emailEnabled,
                         @Value("${app.email.from:no-reply@hackathon.local}") String fromEmail,
-                        @Value("${spring.mail.username:}") String smtpUsername,
                         @Value("${app.email.brevo.api-key:}") String brevoApiKey,
                         @Value("${app.email.brevo.api-url:https://api.brevo.com/v3/smtp/email}") String brevoApiUrl,
                         @Value("${app.web.base-url:http://localhost:8080}") String baseUrl) {
         this.mailSender = mailSender;
         this.emailEnabled = emailEnabled;
         this.fromEmail = fromEmail;
-        this.smtpUsername = smtpUsername;
         this.brevoApiKey = brevoApiKey;
         this.brevoApiUrl = brevoApiUrl;
         this.baseUrl = baseUrl;
@@ -136,27 +133,13 @@ public class EmailService {
             return;
         }
 
-        String primaryFrom = selectPrimaryFromAddress();
-        String smtpFailureSummary;
+        String sender = resolveSenderAddress();
         try {
-            sendMessage(primaryFrom, to, subject, body);
+            sendMessage(sender, to, subject, body);
             return;
-        } catch (Exception primaryEx) {
-            String fallbackFrom = selectFallbackFromAddress(primaryFrom);
-            if (fallbackFrom != null) {
-                try {
-                    sendMessage(fallbackFrom, to, subject, body);
-                    log.warn("Primary EMAIL_FROM '{}' failed. Email delivered using SMTP login sender '{}'.", primaryFrom, fallbackFrom);
-                    return;
-                } catch (Exception fallbackEx) {
-                    smtpFailureSummary = "SMTP delivery failed. primaryFrom='" + primaryFrom + "', fallbackFrom='" + fallbackFrom + "'. "
-                            + extractRootMessage(fallbackEx);
-                    returnOrThrowWithBrevoFallback(primaryFrom, to, subject, body, smtpFailureSummary, fallbackEx);
-                    return;
-                }
-            }
-            smtpFailureSummary = "SMTP delivery failed. from='" + primaryFrom + "'. " + extractRootMessage(primaryEx);
-            returnOrThrowWithBrevoFallback(primaryFrom, to, subject, body, smtpFailureSummary, primaryEx);
+        } catch (Exception smtpEx) {
+            String smtpFailureSummary = "SMTP delivery failed. from='" + sender + "'. " + extractRootMessage(smtpEx);
+            returnOrThrowWithBrevoFallback(sender, to, subject, body, smtpFailureSummary, smtpEx);
         }
     }
 
@@ -168,8 +151,7 @@ public class EmailService {
                                                 Exception smtpException) {
         if (brevoApiKey != null && !brevoApiKey.isBlank()) {
             try {
-                String apiSender = preferredFrom != null && !preferredFrom.isBlank() ? preferredFrom : smtpUsername;
-                sendViaBrevoApi(apiSender, to, subject, body);
+                sendViaBrevoApi(preferredFrom, to, subject, body);
                 log.warn("SMTP failed but Brevo API fallback succeeded. {}", smtpFailureSummary);
                 return;
             } catch (Exception apiEx) {
@@ -188,10 +170,7 @@ public class EmailService {
     private void sendViaBrevoApi(String sender, String to, String subject, String body) throws Exception {
         String senderEmail = sender;
         if (senderEmail == null || senderEmail.isBlank()) {
-            senderEmail = smtpUsername;
-        }
-        if (senderEmail == null || senderEmail.isBlank()) {
-            throw new IllegalStateException("Brevo API sender email is missing");
+            throw new IllegalStateException("EMAIL_FROM is missing. Set a verified Brevo sender email.");
         }
 
         String payload = "{"
@@ -231,25 +210,11 @@ public class EmailService {
         mailSender.send(message);
     }
 
-    private String selectPrimaryFromAddress() {
+    private String resolveSenderAddress() {
         if (fromEmail != null && !fromEmail.isBlank() && !isPlaceholderValue(fromEmail)) {
             return fromEmail.trim();
         }
-        if (smtpUsername != null && !smtpUsername.isBlank() && !isPlaceholderValue(smtpUsername)) {
-            return smtpUsername.trim();
-        }
-        return null;
-    }
-
-    private String selectFallbackFromAddress(String primaryFrom) {
-        if (smtpUsername == null || smtpUsername.isBlank()) {
-            return null;
-        }
-        String fallback = smtpUsername.trim();
-        if (primaryFrom == null || primaryFrom.isBlank()) {
-            return null;
-        }
-        return fallback.equalsIgnoreCase(primaryFrom.trim()) ? null : fallback;
+        throw new IllegalStateException("EMAIL_FROM is missing or invalid. Use a verified sender email in Brevo.");
     }
 
     private boolean isPlaceholderValue(String value) {

@@ -70,10 +70,25 @@ public class UserController {
         return ResponseEntity.ok(paymentService.createOrder(SecurityUtil.currentUsername(), teamId));
     }
 
-    @PostMapping("/payments/{teamId}/verify")
-    public ResponseEntity<PaymentVerificationResponse> verifyPayment(@PathVariable String teamId,
-                                                                     @Valid @RequestBody PaymentVerificationRequest request) {
-        return ResponseEntity.ok(paymentService.verifyPayment(SecurityUtil.currentUsername(), teamId, request));
+    @GetMapping("/payments/upi-config")
+    public ResponseEntity<UpiConfigResponse> getUpiConfig() {
+        return ResponseEntity.ok(paymentService.getUpiPaymentConfig());
+    }
+
+    @PostMapping("/payments/{teamId}/upi/confirm")
+    public ResponseEntity<PaymentVerificationResponse> confirmUpiPayment(@PathVariable String teamId,
+                                                                         @Valid @RequestBody(required = false) UpiPaymentConfirmRequest request) {
+        return ResponseEntity.ok(paymentService.confirmUpiPayment(SecurityUtil.currentUsername(), teamId, request));
+    }
+
+    @GetMapping("/payments/{teamId}/phonepe/status")
+    public ResponseEntity<PaymentVerificationResponse> verifyPhonePePayment(@PathVariable String teamId,
+                                                                             @RequestParam(required = false) String merchantTransactionId) {
+        return ResponseEntity.ok(paymentService.verifyPhonePePayment(
+                SecurityUtil.currentUsername(),
+                teamId,
+                merchantTransactionId
+        ));
     }
 
     @GetMapping("/problem-statements/{eventId}")

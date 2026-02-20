@@ -2,10 +2,7 @@ package com.example.hackathon.service;
 
 import com.example.hackathon.dto.DeploymentCheckResponse;
 import com.example.hackathon.dto.DeploymentReadinessResponse;
-import com.razorpay.RazorpayClient;
-import com.razorpay.RazorpayException;
 import org.bson.Document;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
@@ -25,11 +22,35 @@ public class DeploymentReadinessService {
     @Value("${app.payment.mock-enabled:false}")
     private boolean paymentMockEnabled;
 
-    @Value("${app.razorpay.key-id:}")
-    private String razorpayKeyId;
+    @Value("${app.phonepe.enabled:true}")
+    private boolean phonePeEnabled;
 
-    @Value("${app.razorpay.key-secret:}")
-    private String razorpayKeySecret;
+    @Value("${app.phonepe.merchant-id:}")
+    private String phonePeMerchantId;
+
+    @Value("${app.phonepe.salt-key:}")
+    private String phonePeSaltKey;
+
+    @Value("${app.phonepe.salt-index:1}")
+    private int phonePeSaltIndex;
+
+    @Value("${app.phonepe.base-url:https://api-preprod.phonepe.com/apis/pg-sandbox}")
+    private String phonePeBaseUrl;
+
+    @Value("${app.email.enabled:false}")
+    private boolean emailEnabled;
+
+    @Value("${app.email.from:}")
+    private String emailFrom;
+
+    @Value("${spring.mail.username:}")
+    private String smtpUsername;
+
+    @Value("${spring.mail.password:}")
+    private String smtpPassword;
+
+    @Value("${app.email.brevo.api-key:}")
+    private String brevoApiKey;
 
     public DeploymentReadinessService(MongoTemplate mongoTemplate) {
         this.mongoTemplate = mongoTemplate;
@@ -41,34 +62,9 @@ public class DeploymentReadinessService {
         checks.add(checkMongoConnectivity());
         checks.add(checkJwtSecretStrength());
         checks.add(checkPaymentMockMode());
-
-        boolean razorpayConfigured = isConfiguredForProduction(razorpayKeyId) && isConfiguredForProduction(razorpayKeySecret);
-        checks.add(new DeploymentCheckResponse(
-                "Razorpay keys configured",
-                razorpayConfigured,
-                true,
-                razorpayConfigured
-                        ? "RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET are configured."
-                        : "Set RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to real credentials."
-        ));
-
-        if (razorpayConfigured && !paymentMockEnabled) {
-            checks.add(checkRazorpayConnectivity());
-        } else if (paymentMockEnabled) {
-            checks.add(new DeploymentCheckResponse(
-                    "Razorpay API authentication",
-                    false,
-                    true,
-                    "Skipped because PAYMENT_MOCK_ENABLED is true. Disable mock mode for real payments."
-            ));
-        } else {
-            checks.add(new DeploymentCheckResponse(
-                    "Razorpay API authentication",
-                    false,
-                    true,
-                    "Skipped because Razorpay keys are not configured."
-            ));
-        }
+        checks.add(checkPhonePeConfig());
+        checks.add(checkEmailSenderConfig());
+        checks.add(checkEmailDeliveryConfig());
 
         boolean ready = checks.stream()
                 .filter(DeploymentCheckResponse::required)
@@ -113,49 +109,73 @@ public class DeploymentReadinessService {
     private DeploymentCheckResponse checkPaymentMockMode() {
         boolean valid = !paymentMockEnabled;
         String message = valid
-                ? "PAYMENT_MOCK_ENABLED is false. Real payment flow is enabled."
-                : "PAYMENT_MOCK_ENABLED is true. Disable it for live Razorpay transactions.";
+                ? "PAYMENT_MOCK_ENABLED is false. Live PhonePe payment flow is enabled."
+                : "PAYMENT_MOCK_ENABLED is true. Disable it for live PhonePe payments.";
         return new DeploymentCheckResponse("Payment mock mode", valid, true, message);
     }
 
-    private DeploymentCheckResponse checkRazorpayConnectivity() {
-        try {
-            RazorpayClient client = new RazorpayClient(razorpayKeyId, razorpayKeySecret);
-            JSONObject options = new JSONObject();
-            options.put("count", 1);
-            client.payments.fetchAll(options);
+    private DeploymentCheckResponse checkPhonePeConfig() {
+        if (!phonePeEnabled) {
             return new DeploymentCheckResponse(
-                    "Razorpay API authentication",
-                    true,
-                    true,
-                    "Razorpay credentials validated by API call."
-            );
-        } catch (RazorpayException ex) {
-            return new DeploymentCheckResponse(
-                    "Razorpay API authentication",
+                    "PhonePe merchant config",
                     false,
                     true,
-                    "Razorpay API auth failed: " + sanitizeMessage(ex.getMessage())
-            );
-        } catch (Exception ex) {
-            return new DeploymentCheckResponse(
-                    "Razorpay API authentication",
-                    false,
-                    true,
-                    "Razorpay connectivity check failed: " + sanitizeMessage(ex.getMessage())
+                    "PHONEPE_ENABLED is false. Enable PhonePe payments for production."
             );
         }
+
+        boolean valid = isConfigured(phonePeMerchantId)
+                && isConfigured(phonePeSaltKey)
+                && phonePeSaltIndex > 0
+                && isConfigured(phonePeBaseUrl);
+
+        String message = valid
+                ? "PhonePe merchant credentials are configured."
+                : "Set PHONEPE_MERCHANT_ID, PHONEPE_SALT_KEY, PHONEPE_SALT_INDEX, and PHONEPE_BASE_URL.";
+        return new DeploymentCheckResponse("PhonePe merchant config", valid, true, message);
     }
 
-    private boolean isConfiguredForProduction(String value) {
-        if (value == null || value.isBlank()) {
-            return false;
+    private DeploymentCheckResponse checkEmailSenderConfig() {
+        if (!emailEnabled) {
+            return new DeploymentCheckResponse(
+                    "Email sender configured",
+                    true,
+                    false,
+                    "EMAIL_ENABLED is false. Email checks are skipped."
+            );
         }
-        String normalized = value.trim().toLowerCase();
-        return !normalized.contains("replace")
-                && !normalized.contains("your_")
-                && !normalized.contains("example")
-                && !normalized.contains("rzp_test_replace");
+        boolean valid = isValidEmailSender(emailFrom);
+        return new DeploymentCheckResponse(
+                "Email sender configured",
+                valid,
+                true,
+                valid
+                        ? "EMAIL_FROM is configured with a valid sender."
+                        : "Set EMAIL_FROM to a verified sender email in Brevo."
+        );
+    }
+
+    private DeploymentCheckResponse checkEmailDeliveryConfig() {
+        if (!emailEnabled) {
+            return new DeploymentCheckResponse(
+                    "Email delivery path",
+                    true,
+                    false,
+                    "EMAIL_ENABLED is false. Email checks are skipped."
+            );
+        }
+        boolean smtpConfigured = isNonBlank(smtpUsername) && isNonBlank(smtpPassword);
+        boolean brevoApiConfigured = isNonBlank(brevoApiKey);
+        boolean valid = smtpConfigured || brevoApiConfigured;
+        String message;
+        if (valid) {
+            message = smtpConfigured
+                    ? "SMTP credentials are configured."
+                    : "BREVO_API_KEY is configured for HTTPS email fallback.";
+        } else {
+            message = "Configure SMTP_USERNAME/SMTP_PASSWORD or BREVO_API_KEY.";
+        }
+        return new DeploymentCheckResponse("Email delivery path", valid, true, message);
     }
 
     private boolean isStrongSecret(String secret) {
@@ -167,6 +187,32 @@ public class DeploymentReadinessService {
             return false;
         }
         return secret.length() >= 32;
+    }
+
+    private boolean isValidEmailSender(String sender) {
+        if (!isNonBlank(sender)) {
+            return false;
+        }
+        String normalized = sender.trim().toLowerCase();
+        if (normalized.contains("<") || normalized.contains(">") || normalized.contains("your-")
+                || normalized.contains("replace") || normalized.contains("example")) {
+            return false;
+        }
+        return normalized.contains("@");
+    }
+
+    private boolean isNonBlank(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private boolean isConfigured(String value) {
+        if (!isNonBlank(value)) {
+            return false;
+        }
+        String normalized = value.trim().toLowerCase();
+        return !normalized.contains("replace")
+                && !normalized.contains("example")
+                && !normalized.contains("your_");
     }
 
     private String sanitizeMessage(String message) {
