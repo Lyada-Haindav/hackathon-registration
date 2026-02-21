@@ -9,7 +9,7 @@ spring:
   data:
     mongodb:
       uri: ${MONGODB_URI:mongodb+srv://nanihaindav99145_db_user:Haindav1@cluster0.tkl0k00.mongodb.net/hackathon_db?retryWrites=true&w=majority&appName=Cluster0}
-      auto-index-creation: true
+      auto-index-creation: ${MONGODB_AUTO_INDEX_CREATION:false}
   mail:
     host: ${SMTP_HOST:smtp-relay.brevo.com}
     port: ${SMTP_PORT:587}
