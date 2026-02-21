@@ -14,12 +14,16 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class FormService {
 
+    private static final long FORM_CACHE_TTL_MS = 120_000;
+
     private final RegistrationFormRepository formRepository;
     private final EventService eventService;
+    private final ConcurrentHashMap<String, CachedFormEntry> formCacheByEventId = new ConcurrentHashMap<>();
 
     public FormService(RegistrationFormRepository formRepository, EventService eventService) {
         this.formRepository = formRepository;
@@ -33,13 +37,22 @@ public class FormService {
         form.setFields(request.fields().stream().map(this::toField).toList());
         form.setCreatedBy(facultyEmail);
         form.setUpdatedAt(Instant.now());
-        return formRepository.save(form);
+        RegistrationForm saved = formRepository.save(form);
+        cacheForm(saved);
+        return saved;
     }
 
     public RegistrationForm ensureDefaultFormForEvent(String eventId, String createdBy) {
         eventService.getEventEntity(eventId);
-        return formRepository.findByEventId(eventId)
+        RegistrationForm cached = getCachedForm(eventId);
+        if (cached != null) {
+            return cached;
+        }
+
+        RegistrationForm resolved = formRepository.findByEventId(eventId)
                 .orElseGet(() -> createDefaultForm(eventId, createdBy));
+        cacheForm(resolved);
+        return resolved;
     }
 
     public RegistrationForm getOrCreateFormByEventId(String eventId) {
@@ -47,8 +60,15 @@ public class FormService {
     }
 
     public RegistrationForm getFormByEventId(String eventId) {
-        return formRepository.findByEventId(eventId)
+        RegistrationForm cached = getCachedForm(eventId);
+        if (cached != null) {
+            return cached;
+        }
+
+        RegistrationForm resolved = formRepository.findByEventId(eventId)
                 .orElseThrow(() -> new ResourceNotFoundException("Registration form not found for event: " + eventId));
+        cacheForm(resolved);
+        return resolved;
     }
 
     public void validateFormResponse(String eventId, Map<String, Object> formResponses) {
@@ -79,7 +99,9 @@ public class FormService {
         form.setFields(defaultFields());
         form.setCreatedBy(createdBy == null || createdBy.isBlank() ? "SYSTEM_DEFAULT" : createdBy);
         form.setUpdatedAt(Instant.now());
-        return formRepository.save(form);
+        RegistrationForm saved = formRepository.save(form);
+        cacheForm(saved);
+        return saved;
     }
 
     private List<FormField> defaultFields() {
@@ -105,5 +127,31 @@ public class FormService {
         FormField field = defaultField(key, label, FieldType.SELECT, required);
         field.setOptions(new ArrayList<>(options));
         return field;
+    }
+
+    private RegistrationForm getCachedForm(String eventId) {
+        if (eventId == null || eventId.isBlank()) {
+            return null;
+        }
+        CachedFormEntry cached = formCacheByEventId.get(eventId);
+        if (cached == null) {
+            return null;
+        }
+        long now = System.currentTimeMillis();
+        if (now - cached.cachedAtMs() > FORM_CACHE_TTL_MS) {
+            formCacheByEventId.remove(eventId);
+            return null;
+        }
+        return cached.form();
+    }
+
+    private void cacheForm(RegistrationForm form) {
+        if (form == null || form.getEventId() == null || form.getEventId().isBlank()) {
+            return;
+        }
+        formCacheByEventId.put(form.getEventId(), new CachedFormEntry(form, System.currentTimeMillis()));
+    }
+
+    private record CachedFormEntry(RegistrationForm form, long cachedAtMs) {
     }
 }

@@ -11,6 +11,8 @@ public interface PaymentRepository extends MongoRepository<Payment, String> {
 
     List<Payment> findByTeamId(String teamId);
 
+    Optional<Payment> findTopByTeamIdOrderByCreatedAtDesc(String teamId);
+
     List<Payment> findByEventId(String eventId);
 
     void deleteByTeamId(String teamId);

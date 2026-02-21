@@ -66,10 +66,6 @@ public class TeamService {
         HackathonEvent event = eventService.getEventEntity(request.eventId());
         eventService.validateRegistrationWindow(event);
 
-        if (teamRepository.existsByUserId(user.getId())) {
-            throw new BadRequestException("User can register only one team in the system");
-        }
-
         validateMembers(request.members());
         formService.validateFormResponse(request.eventId(), request.formResponses());
 
@@ -240,10 +236,6 @@ public class TeamService {
     private Team saveTeamWithUniqueName(Team team) {
         for (int attempt = 0; attempt < TEAM_NAME_GENERATION_MAX_ATTEMPTS; attempt++) {
             String candidate = teamNameGenerator.generateUniqueName();
-            if (teamRepository.existsByTeamName(candidate)) {
-                continue;
-            }
-
             team.setTeamName(candidate);
             try {
                 return teamRepository.save(team);

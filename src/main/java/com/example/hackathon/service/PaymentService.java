@@ -31,7 +31,6 @@ import java.security.MessageDigest;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Comparator;
 import java.util.Locale;
 
 @Service
@@ -314,8 +313,7 @@ public class PaymentService {
     }
 
     private Payment latestPaymentForTeam(String teamId) {
-        return paymentRepository.findByTeamId(teamId).stream()
-                .max(Comparator.comparing(Payment::getCreatedAt, Comparator.nullsLast(Comparator.naturalOrder())))
+        return paymentRepository.findTopByTeamIdOrderByCreatedAtDesc(teamId)
                 .orElseGet(Payment::new);
     }
 

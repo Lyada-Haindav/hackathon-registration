@@ -33,6 +33,10 @@ public class EventService {
     private final ProblemStatementRepository problemStatementRepository;
     private final RegistrationFormRepository formRepository;
     private final int feeSplitMembers;
+    private final long activeEventsCacheTtlMs;
+    private volatile List<EventResponse> activeEventsCache = List.of();
+    private volatile long activeEventsCachedAtMs = 0L;
+    private volatile boolean activeEventsCacheInitialized = false;
 
     public EventService(HackathonEventRepository eventRepository,
                         TeamRepository teamRepository,
@@ -42,7 +46,8 @@ public class EventService {
                         CriterionRepository criterionRepository,
                         ProblemStatementRepository problemStatementRepository,
                         RegistrationFormRepository formRepository,
-                        @Value("${app.payment.fee-split-members:4}") int feeSplitMembers) {
+                        @Value("${app.payment.fee-split-members:4}") int feeSplitMembers,
+                        @Value("${app.cache.active-events-ttl-ms:15000}") long activeEventsCacheTtlMs) {
         this.eventRepository = eventRepository;
         this.teamRepository = teamRepository;
         this.teamMemberRepository = teamMemberRepository;
@@ -52,6 +57,7 @@ public class EventService {
         this.problemStatementRepository = problemStatementRepository;
         this.formRepository = formRepository;
         this.feeSplitMembers = feeSplitMembers;
+        this.activeEventsCacheTtlMs = Math.max(activeEventsCacheTtlMs, 1000L);
     }
 
     public EventResponse createEvent(CreateEventRequest request, String facultyEmail) {
@@ -79,6 +85,7 @@ public class EventService {
         event.setCreatedBy(facultyEmail);
 
         HackathonEvent saved = eventRepository.save(event);
+        invalidateCaches();
         return toResponse(saved);
     }
 
@@ -105,13 +112,24 @@ public class EventService {
         if (request.active()) {
             event.setOnHold(false);
         }
-        return toResponse(eventRepository.save(event));
+        EventResponse response = toResponse(eventRepository.save(event));
+        invalidateCaches();
+        return response;
     }
 
     public List<EventResponse> getActiveEvents() {
-        return eventRepository.findByActiveTrue().stream()
+        long now = System.currentTimeMillis();
+        if (activeEventsCacheInitialized && now - activeEventsCachedAtMs <= activeEventsCacheTtlMs) {
+            return activeEventsCache;
+        }
+
+        List<EventResponse> fresh = eventRepository.findByActiveTrue().stream()
                 .map(this::toResponse)
                 .toList();
+        activeEventsCache = List.copyOf(fresh);
+        activeEventsCachedAtMs = now;
+        activeEventsCacheInitialized = true;
+        return fresh;
     }
 
     public List<EventResponse> getAllEvents() {
@@ -125,21 +143,27 @@ public class EventService {
     public EventResponse setLeaderboardVisibility(String eventId, boolean visible) {
         HackathonEvent event = getEventEntity(eventId);
         event.setLeaderboardVisible(visible);
-        return toResponse(eventRepository.save(event));
+        EventResponse response = toResponse(eventRepository.save(event));
+        invalidateCaches();
+        return response;
     }
 
     public EventResponse holdEvent(String eventId) {
         HackathonEvent event = getEventEntity(eventId);
         event.setOnHold(true);
         event.setActive(false);
-        return toResponse(eventRepository.save(event));
+        EventResponse response = toResponse(eventRepository.save(event));
+        invalidateCaches();
+        return response;
     }
 
     public EventResponse resumeEvent(String eventId) {
         HackathonEvent event = getEventEntity(eventId);
         event.setOnHold(false);
         event.setActive(true);
-        return toResponse(eventRepository.save(event));
+        EventResponse response = toResponse(eventRepository.save(event));
+        invalidateCaches();
+        return response;
     }
 
     public EventResponse openRegistrationNow(String eventId) {
@@ -147,13 +171,17 @@ public class EventService {
         event.setRegistrationOpen(true);
         event.setOnHold(false);
         event.setActive(true);
-        return toResponse(eventRepository.save(event));
+        EventResponse response = toResponse(eventRepository.save(event));
+        invalidateCaches();
+        return response;
     }
 
     public EventResponse closeRegistrationNow(String eventId) {
         HackathonEvent event = getEventEntity(eventId);
         event.setRegistrationOpen(false);
-        return toResponse(eventRepository.save(event));
+        EventResponse response = toResponse(eventRepository.save(event));
+        invalidateCaches();
+        return response;
     }
 
     public void deleteEvent(String eventId) {
@@ -171,6 +199,7 @@ public class EventService {
         formRepository.deleteByEventId(eventId);
         teamRepository.deleteByEventId(eventId);
         eventRepository.deleteById(eventId);
+        invalidateCaches();
     }
 
     public HackathonEvent getEventEntity(String eventId) {
@@ -234,5 +263,11 @@ public class EventService {
             return "https://" + normalized;
         }
         return normalized;
+    }
+
+    public void invalidateCaches() {
+        activeEventsCache = List.of();
+        activeEventsCachedAtMs = 0L;
+        activeEventsCacheInitialized = false;
     }
 }

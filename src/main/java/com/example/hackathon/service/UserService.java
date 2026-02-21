@@ -16,15 +16,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
 public class UserService {
 
     private static final Logger log = LoggerFactory.getLogger(UserService.class);
+    private static final long USER_CACHE_TTL_MS = 120_000;
 
     private final UserRepository userRepository;
     private final MongoTemplate mongoTemplate;
+    private final ConcurrentHashMap<String, CachedUserEntry> userCacheByEmail = new ConcurrentHashMap<>();
 
     public UserService(UserRepository userRepository, MongoTemplate mongoTemplate) {
         this.userRepository = userRepository;
@@ -41,8 +44,16 @@ public class UserService {
 
     public User findByEmail(String email) {
         String normalizedEmail = normalizeEmail(email);
-        return userRepository.findByEmail(normalizedEmail)
+        CachedUserEntry cached = userCacheByEmail.get(normalizedEmail);
+        long now = System.currentTimeMillis();
+        if (cached != null && now - cached.cachedAtMs() <= USER_CACHE_TTL_MS) {
+            return cached.user();
+        }
+
+        User resolved = userRepository.findByEmail(normalizedEmail)
                 .orElseGet(() -> findByEmailFallbackIgnoreCase(normalizedEmail));
+        userCacheByEmail.put(normalizedEmail, new CachedUserEntry(resolved, now));
+        return resolved;
     }
 
     private User findByEmailFallbackIgnoreCase(String normalizedEmail) {
@@ -61,6 +72,17 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
     }
 
+    public void evictUserCacheByEmail(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        if (!normalizedEmail.isBlank()) {
+            userCacheByEmail.remove(normalizedEmail);
+        }
+    }
+
+    public void evictAllUserCache() {
+        userCacheByEmail.clear();
+    }
+
     public String normalizeEmail(String email) {
         if (email == null) {
             return "";
@@ -69,6 +91,7 @@ public class UserService {
     }
 
     public int deduplicateUsersByEmail() {
+        evictAllUserCache();
         List<User> users = userRepository.findAll();
         Map<String, List<User>> groupedByEmail = users.stream()
                 .filter(user -> user.getEmail() != null && !user.getEmail().isBlank())
@@ -97,6 +120,7 @@ public class UserService {
         }
 
         ensureUniqueEmailIndex();
+        evictAllUserCache();
         if (removed > 0) {
             log.warn("Deduplicated {} duplicate user record(s).", removed);
         }
@@ -120,5 +144,8 @@ public class UserService {
         } catch (Exception ex) {
             log.warn("Unable to enforce unique email index: {}", ex.getMessage());
         }
+    }
+
+    private record CachedUserEntry(User user, long cachedAtMs) {
     }
 }

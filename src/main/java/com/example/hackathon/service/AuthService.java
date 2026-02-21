@@ -118,11 +118,13 @@ public class AuthService {
         } catch (DuplicateKeyException ex) {
             throw new BadRequestException("Email is already registered");
         }
+        userService.evictUserCacheByEmail(saved.getEmail());
 
         try {
             sendOrganizerApprovalMail(saved);
         } catch (BadRequestException ex) {
             userRepository.deleteById(saved.getId());
+            userService.evictUserCacheByEmail(saved.getEmail());
             throw ex;
         }
 
@@ -199,7 +201,9 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(rawPassword));
         user.setRole(Role.FACULTY);
         user.setEmailVerified(true);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        userService.evictUserCacheByEmail(saved.getEmail());
+        return saved;
     }
 
     public MessageResponse verifyEmail(String token) {
@@ -215,6 +219,7 @@ public class AuthService {
 
         user.setEmailVerified(true);
         userRepository.save(user);
+        userService.evictUserCacheByEmail(user.getEmail());
         authTokenService.consumeToken(token, AuthTokenType.EMAIL_VERIFICATION);
 
         return new MessageResponse("Email verified successfully. You can login now.");
@@ -269,6 +274,7 @@ public class AuthService {
 
         user.setPassword(passwordEncoder.encode(request.newPassword()));
         userRepository.save(user);
+        userService.evictUserCacheByEmail(user.getEmail());
         authTokenService.consumeToken(request.token(), AuthTokenType.PASSWORD_RESET);
 
         return new MessageResponse("Password updated successfully. Please login with your new password.");
@@ -292,6 +298,7 @@ public class AuthService {
 
         user.setActive(true);
         userRepository.save(user);
+        userService.evictUserCacheByEmail(user.getEmail());
         authTokenService.consumeToken(token, AuthTokenType.ORGANIZER_APPROVAL);
 
         try {
@@ -345,12 +352,14 @@ public class AuthService {
         } catch (DuplicateKeyException ex) {
             throw new BadRequestException("Email is already registered");
         }
+        userService.evictUserCacheByEmail(saved.getEmail());
 
         if (saved.getRole() == Role.USER && !saved.isEmailVerified()) {
             try {
                 sendVerificationMail(saved);
             } catch (BadRequestException ex) {
                 userRepository.deleteById(saved.getId());
+                userService.evictUserCacheByEmail(saved.getEmail());
                 throw ex;
             }
             return new AuthResponse(
